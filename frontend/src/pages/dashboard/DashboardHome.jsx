@@ -36,7 +36,6 @@ const DashboardHome = () => {
         ? booksData.books
         : [];
 
-      // Pending + Completed
       const pendingOrders = allOrders.filter(
         (order) => order.paymentStatus !== "COMPLETE"
       ).length;
@@ -49,7 +48,6 @@ const DashboardHome = () => {
         .filter((order) => order.paymentStatus === "COMPLETE")
         .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
 
-      // Book count map
       const bookCounts = {};
 
       allOrders.forEach((order) => {
@@ -63,7 +61,6 @@ const DashboardHome = () => {
         }
       });
 
-      // Popular books (SAFE FIX)
       const popularBooksRaw = Object.entries(bookCounts).map(
         ([id, count]) => {
           const orderWithProduct = allOrders.find((order) =>
@@ -83,12 +80,10 @@ const DashboardHome = () => {
         }
       );
 
-      // ✅ FIXED SORT (NO MUTATION ERROR)
       const popularBooks = [...popularBooksRaw]
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      // Monthly Sales
       const salesByMonth = {};
 
       allOrders
@@ -100,23 +95,16 @@ const DashboardHome = () => {
             year: "numeric",
           });
 
-          if (!salesByMonth[month]) {
-            salesByMonth[month] = 0;
-          }
-
-          salesByMonth[month] += order.totalPrice || 0;
+          salesByMonth[month] =
+            (salesByMonth[month] || 0) + (order.totalPrice || 0);
         });
 
       const monthlySales = Object.entries(salesByMonth)
         .map(([month, totalSales]) => ({ month, totalSales }))
         .sort((a, b) => new Date(a.month) - new Date(b.month));
 
-      // ✅ FIXED recentOrders (NO MUTATION ERROR)
       const recentOrders = [...allOrders]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-        )
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5);
 
       setStats({
@@ -144,7 +132,7 @@ const DashboardHome = () => {
         </h2>
         <button
           onClick={() => refetch()}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
         >
           Retry
         </button>
@@ -153,23 +141,30 @@ const DashboardHome = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard Overview</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Dashboard Overview
+          </h1>
+          <p className="text-sm text-gray-500">
+            Monitor your sales, books, and orders in real time
+          </p>
+        </div>
 
         <div className="flex gap-3">
           <Link
             to="/dashboard/add-book"
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Add Book
           </Link>
 
           <Link
             to="/dashboard/manage-books"
-            className="bg-gray-600 text-white px-4 py-2 rounded"
+            className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
           >
             Manage Books
           </Link>
@@ -177,7 +172,7 @@ const DashboardHome = () => {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard title="Books" value={stats.totalBooks} />
         <StatsCard title="Orders" value={stats.totalOrders} />
         <StatsCard title="Pending" value={stats.pendingOrders} />
@@ -185,43 +180,80 @@ const DashboardHome = () => {
         <StatsCard title="Earnings" value={stats.totalEarnings} />
       </div>
 
-      {/* CHART */}
-      <div className="bg-white p-6 rounded shadow">
-        <SalesChart data={stats.monthlySales} />
+      {/* CHART + SIDE INFO */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* CHART */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">
+            Monthly Sales
+          </h2>
+          <SalesChart data={stats.monthlySales} />
+        </div>
+
+        {/* QUICK SUMMARY */}
+        <div className="bg-white p-6 rounded-xl shadow space-y-4">
+          <h2 className="text-lg font-semibold">Quick Insights</h2>
+
+          <div className="text-sm text-gray-600 space-y-2">
+            <p>Total Books: {stats.totalBooks}</p>
+            <p>Total Orders: {stats.totalOrders}</p>
+            <p>Pending Orders: {stats.pendingOrders}</p>
+            <p>Completed Orders: {stats.completedOrders}</p>
+          </div>
+        </div>
+
       </div>
 
-      {/* RECENT ORDERS */}
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">
-          Recent Orders
-        </h2>
+      {/* RECENT + POPULAR SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {stats.recentOrders.map((order) => (
-          <div
-            key={order._id}
-            className="flex justify-between border-b py-2"
-          >
-            <span>#{order._id.slice(-5)}</span>
-            <span>{order.totalPrice}</span>
+        {/* RECENT ORDERS */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">
+            Recent Orders
+          </h2>
+
+          <div className="space-y-3">
+            {stats.recentOrders.map((order) => (
+              <div
+                key={order._id}
+                className="flex justify-between text-sm border-b pb-2"
+              >
+                <span className="text-gray-700">
+                  #{order._id.slice(-6)}
+                </span>
+                <span className="font-medium">
+                  Rs {order.totalPrice}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* POPULAR BOOKS */}
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">
-          Popular Books
-        </h2>
+        {/* POPULAR BOOKS */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">
+            Popular Books
+          </h2>
 
-        {stats.popularBooks.map((book) => (
-          <div
-            key={book._id}
-            className="flex justify-between border-b py-2"
-          >
-            <span>{book.title}</span>
-            <span>{book.count}</span>
+          <div className="space-y-3">
+            {stats.popularBooks.map((book) => (
+              <div
+                key={book._id}
+                className="flex justify-between text-sm border-b pb-2"
+              >
+                <span className="text-gray-700">
+                  {book.title}
+                </span>
+                <span className="font-medium">
+                  {book.count} sold
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
       </div>
 
     </div>

@@ -1,320 +1,507 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import getBaseUrl from "../../utils/baseURL";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  CreditCard,
+} from "lucide-react";
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const cartItems = useSelector((state) => state.cart.cartItems);
   const { currentUser } = useAuth();
-  const [isChecked, setIsChecked] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("esewa");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const cartItems = useSelector(
+    (state) => state.cart.cartItems
+  );
 
- 
+  const [paymentMethod, setPaymentMethod] =
+    useState("esewa");
+  const [isChecked, setIsChecked] =
+    useState(false);
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
   const totalPrice = cartItems
-    .reduce((acc, item) => acc + (item.newPrice * item.quantity), 0)
+    .reduce(
+      (acc, item) =>
+        acc + item.newPrice * item.quantity,
+      0
+    )
     .toFixed(2);
 
-  
-  const totalItems = cartItems
-    .reduce((acc, item) => acc + item.quantity, 0);
+  const totalItems = cartItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0
+  );
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm();
+    reset,
+    formState: { errors, isValid },
+  } = useForm({
+    mode: "onChange",
+  });
 
-  const handleCashOnDelivery = async (formData) => {
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      const newOrder = {
-        name: formData.name,
-        email: currentUser?.email,
-        address: {
-          city: formData.city,
-          country: formData.country,
-          state: formData.state,
-          zipcode: formData.zipcode,
-        },
-        phone: formData.phone,
-        productIds: cartItems.map((item) => ({
-          _id: item._id,
-          quantity: item.quantity,
-          price: item.newPrice
-        })),
-        totalPrice: totalPrice,
-        totalItems: totalItems,
-        paymentMethod: "CASH_ON_DELIVERY",
-        paymentStatus: "PENDING"
-      };
+  /* AUTO FILL USER DATA */
+  useEffect(() => {
+    if (currentUser) {
+      reset({
+        name:
+          currentUser?.displayName ||
+          currentUser?.fullName ||
+          currentUser?.name ||
+          currentUser?.username ||
+          "",
 
-      const response = await axios.post(`${getBaseUrl()}/api/orders`, newOrder);
-      
-      navigate("/order-confirmation", { 
-        state: { 
-          orderId: response.data._id,
-          paymentMethod: "CASH_ON_DELIVERY"
-        } 
+        email: currentUser?.email || "",
+
+        phone:
+          currentUser?.phone ||
+          currentUser?.phoneNumber ||
+          "",
+
+        address:
+          currentUser?.address || "",
+
+        city: currentUser?.city || "",
+        state: currentUser?.state || "",
+        country:
+          currentUser?.country || "Nepal",
+
+        zipcode:
+          currentUser?.zipcode || "",
       });
-    } catch (err) {
-      console.error("Error creating order:", err);
-      setError(err.response?.data?.message || "Failed to place order. Please try again.");
+    }
+  }, [currentUser, reset]);
+
+  /* SUBMIT */
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
+
+    const newOrder = {
+      ...data,
+      totalPrice,
+      totalItems,
+      paymentMethod:
+        paymentMethod === "esewa"
+          ? "ESEWA"
+          : "CASH_ON_DELIVERY",
+
+      productIds: cartItems.map((item) => ({
+        _id: item._id,
+        quantity: item.quantity,
+        price: item.newPrice,
+      })),
+    };
+
+    try {
+      if (paymentMethod === "esewa") {
+        localStorage.setItem(
+          "pendingOrder",
+          JSON.stringify(newOrder)
+        );
+
+        navigate("/payment", {
+          state: newOrder,
+        });
+      } else {
+        const res = await axios.post(
+          `${getBaseUrl()}/api/orders`,
+          newOrder
+        );
+
+        navigate("/order-confirmation", {
+          state: {
+            orderId: res.data._id,
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEsewaPayment = (formData) => {
-    const newOrder = {
-      name: formData.name,
-      email: currentUser?.email,
-      address: {
-        city: formData.city,
-        country: formData.country,
-        state: formData.state,
-        zipcode: formData.zipcode,
-      },
-      phone: formData.phone,
-      productIds: cartItems.map((item) => ({
-        _id: item._id,
-        quantity: item.quantity,
-        price: item.newPrice
-      })),
-      totalPrice: totalPrice,
-      totalItems: totalItems,
-      paymentMethod: "ESEWA",
-      paymentStatus: "PENDING"
-    };
-
-    localStorage.setItem("pendingOrder", JSON.stringify(newOrder));
-    navigate("/payment", { state: newOrder });
-  };
-
-  const onSubmit = (data) => {
-    if (paymentMethod === "esewa") {
-      handleEsewaPayment(data);
-    } else {
-      handleCashOnDelivery(data);
-    }
-  };
-
   return (
-    <section>
-      <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
-        <div className="container max-w-screen-lg mx-auto">
-          <div>
-            <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
-            <p className="text-gray-500 mb-2">Rs.{totalPrice}</p>
-            <p className="text-gray-500 mb-6">
-              Items: {totalItems > 0 ? totalItems : 0}
-            </p>
+    <section className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 py-10 px-4">
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-8">
+        {/* LEFT */}
+        <div className="lg:col-span-2 bg-white rounded-3xl shadow-xl p-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Checkout Details
+          </h1>
 
-            <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="grid gap-4 text-sm grid-cols-1 lg:grid-cols-3 my-8"
-              >
-                <div className="text-gray-600">
-                  <p className="font-medium text-lg">Personal Details</p>
-                  <p>Please fill out all the fields.</p>
-                </div>
+          <p className="text-gray-500 mt-2 mb-8">
+            Fill all required details to continue.
+          </p>
 
-                <div className="lg:col-span-2">
-                  <div className="grid gap-4 text-sm grid-cols-1 md:grid-cols-5">
-                    <div className="md:col-span-5">
-                      <label htmlFor="name">Full Name</label>
-                      <input
-                        {...register("name", { required: true })}
-                        type="text"
-                        id="name"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.name && (
-                        <p className="text-red-500 text-xs mt-1">Name is required.</p>
-                      )}
-                    </div>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-8"
+          >
+            {/* PERSONAL INFO */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-700 mb-5">
+                Personal Information
+              </h2>
 
-                    <div className="md:col-span-5">
-                      <label htmlFor="email">Email Address</label>
-                      <input
-                        type="text"
-                        id="email"
-                        disabled
-                        defaultValue={currentUser?.email}
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                    </div>
-
-                    <div className="md:col-span-5">
-                      <label htmlFor="phone">Phone Number</label>
-                      <input
-                        {...register("phone", { required: true })}
-                        type="number"
-                        id="phone"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.phone && (
-                        <p className="text-red-500 text-xs mt-1">Phone is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-3">
-                      <label htmlFor="address">Address / Street</label>
-                      <input
-                        {...register("address", { required: true })}
-                        type="text"
-                        id="address"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.address && (
-                        <p className="text-red-500 text-xs mt-1">Address is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label htmlFor="city">City</label>
-                      <input
-                        {...register("city", { required: true })}
-                        type="text"
-                        id="city"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.city && (
-                        <p className="text-red-500 text-xs mt-1">City is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label htmlFor="country">Country</label>
-                      <input
-                        {...register("country", { required: true })}
-                        type="text"
-                        id="country"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.country && (
-                        <p className="text-red-500 text-xs mt-1">Country is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label htmlFor="state">State</label>
-                      <input
-                        {...register("state", { required: true })}
-                        type="text"
-                        id="state"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.state && (
-                        <p className="text-red-500 text-xs mt-1">State is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-1">
-                      <label htmlFor="zipcode">Zipcode</label>
-                      <input
-                        {...register("zipcode", { required: true })}
-                        type="text"
-                        id="zipcode"
-                        className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                      />
-                      {errors.zipcode && (
-                        <p className="text-red-500 text-xs mt-1">Zipcode is required.</p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-5">
-                      <label className="font-medium text-gray-700 mb-2 block">
-                        Payment Method
-                      </label>
-                      <div className="flex flex-col space-y-2">
-                        <label className="inline-flex items-center">
-                          <input
-                            type="radio"
-                            className="form-radio"
-                            name="paymentMethod"
-                            value="esewa"
-                            checked={paymentMethod === "esewa"}
-                            onChange={() => setPaymentMethod("esewa")}
-                          />
-                          <span className="ml-2">Pay with eSewa</span>
-                        </label>
-                        <label className="inline-flex items-center">
-                          <input
-                            type="radio"
-                            className="form-radio"
-                            name="paymentMethod"
-                            value="cod"
-                            checked={paymentMethod === "cod"}
-                            onChange={() => setPaymentMethod("cod")}
-                          />
-                          <span className="ml-2">Cash on Delivery</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-5 mt-3">
-                      <div className="inline-flex items-center">
-                        <input
-                          type="checkbox"
-                          onChange={(e) => setIsChecked(e.target.checked)}
-                          className="form-checkbox"
-                        />
-                        <label htmlFor="billing_same" className="ml-2">
-                          I agree to the{" "}
-                          <Link className="underline text-blue-600">Terms & Conditions</Link> and{" "}
-                          <Link className="underline text-blue-600">Shopping Policy</Link>.
-                        </label>
-                      </div>
-                    </div>
-
-                    {error && (
-                      <div className="md:col-span-5 text-red-500">
-                        {error}
-                      </div>
-                    )}
-
-                    <div className="md:col-span-5 text-right">
-                      <button
-                        type="submit"
-                        disabled={!isChecked || isSubmitting}
-                        className={`${
-                          isChecked
-                            ? paymentMethod === "esewa"
-                              ? "bg-green-500 hover:bg-green-600"
-                              : "bg-blue-500 hover:bg-blue-600"
-                            : "bg-gray-300 cursor-not-allowed"
-                        } text-white font-bold py-2 px-4 rounded`}
-                      >
-                        {isSubmitting ? (
-                          "Processing..."
-                        ) : paymentMethod === "esewa" ? (
-                          "Pay with eSewa"
-                        ) : (
-                          "Place Order (Cash on Delivery)"
-                        )}
-                      </button>
-                    </div>
+              <div className="grid md:grid-cols-2 gap-5">
+                {/* NAME */}
+                <div>
+                  <label className="label">
+                    Full Name *
+                  </label>
+                  <div className="inputBox">
+                    <User size={18} />
+                    <input
+                      {...register("name", {
+                        required:
+                          "Full Name is required",
+                      })}
+                      className="input"
+                    />
                   </div>
+                  <p className="error">
+                    {errors.name?.message}
+                  </p>
                 </div>
-              </form>
+
+                {/* EMAIL */}
+                <div>
+                  <label className="label">
+                    Email *
+                  </label>
+                  <div className="inputBox">
+                    <Mail size={18} />
+                    <input
+                      {...register("email", {
+                        required:
+                          "Email is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.email?.message}
+                  </p>
+                </div>
+
+                {/* PHONE */}
+                <div>
+                  <label className="label">
+                    Phone *
+                  </label>
+                  <div className="inputBox">
+                    <Phone size={18} />
+                    <input
+                      {...register("phone", {
+                        required:
+                          "Phone is required",
+                      })}
+                      className="input"
+                      type="text"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.phone?.message}
+                  </p>
+                </div>
+
+                {/* ZIP */}
+                <div>
+                  <label className="label">
+                    Zip Code *
+                  </label>
+                  <div className="inputBox">
+                    <MapPin size={18} />
+                    <input
+                      {...register("zipcode", {
+                        required:
+                          "Zip code is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.zipcode?.message}
+                  </p>
+                </div>
+
+                {/* ADDRESS */}
+                <div className="md:col-span-2">
+                  <label className="label">
+                    Street Address *
+                  </label>
+                  <div className="inputBox">
+                    <MapPin size={18} />
+                    <input
+                      {...register("address", {
+                        required:
+                          "Address is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.address?.message}
+                  </p>
+                </div>
+
+                {/* CITY */}
+                <div>
+                  <label className="label">
+                    City *
+                  </label>
+                  <div className="inputBox">
+                    <MapPin size={18} />
+                    <input
+                      {...register("city", {
+                        required:
+                          "City is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.city?.message}
+                  </p>
+                </div>
+
+                {/* STATE */}
+                <div>
+                  <label className="label">
+                    State *
+                  </label>
+                  <div className="inputBox">
+                    <MapPin size={18} />
+                    <input
+                      {...register("state", {
+                        required:
+                          "State is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.state?.message}
+                  </p>
+                </div>
+
+                {/* COUNTRY */}
+                <div className="md:col-span-2">
+                  <label className="label">
+                    Country *
+                  </label>
+                  <div className="inputBox">
+                    <MapPin size={18} />
+                    <input
+                      {...register("country", {
+                        required:
+                          "Country is required",
+                      })}
+                      className="input"
+                    />
+                  </div>
+                  <p className="error">
+                    {errors.country?.message}
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* PAYMENT */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-700 mb-5">
+                Payment Method
+              </h2>
+
+              <div className="space-y-4">
+                <label className="paymentCard">
+                  <input
+                    type="radio"
+                    checked={
+                      paymentMethod === "esewa"
+                    }
+                    onChange={() =>
+                      setPaymentMethod("esewa")
+                    }
+                  />
+                  <span>Pay with eSewa</span>
+                </label>
+
+                <label className="paymentCard">
+                  <input
+                    type="radio"
+                    checked={
+                      paymentMethod === "cod"
+                    }
+                    onChange={() =>
+                      setPaymentMethod("cod")
+                    }
+                  />
+                  <span>
+                    Cash on Delivery
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* TERMS */}
+            <div className="flex gap-3 items-start">
+              <input
+                type="checkbox"
+                onChange={(e) =>
+                  setIsChecked(
+                    e.target.checked
+                  )
+                }
+              />
+
+              <p className="text-sm text-gray-600">
+                I agree with{" "}
+                <Link className="text-blue-600 underline">
+                  Terms & Conditions
+                </Link>{" "}
+                and{" "}
+                <Link className="text-blue-600 underline">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
+
+            {/* BUTTON */}
+            <button
+              type="submit"
+              disabled={
+                !isValid ||
+                !isChecked ||
+                isSubmitting
+              }
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-semibold shadow-lg hover:scale-[1.02] duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSubmitting
+                ? "Processing..."
+                : paymentMethod ===
+                  "esewa"
+                ? "Pay with eSewa"
+                : "Place Order"}
+            </button>
+          </form>
+        </div>
+
+        {/* RIGHT */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 h-fit sticky top-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Order Summary
+          </h2>
+
+          <div className="space-y-4 text-gray-700">
+            <div className="flex justify-between">
+              <span>Total Items</span>
+              <span>{totalItems}</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>
+                Rs. {totalPrice}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Shipping</span>
+              <span className="text-green-600">
+                Free
+              </span>
+            </div>
+
+            <hr />
+
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total</span>
+              <span className="text-blue-600">
+                Rs. {totalPrice}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-blue-50 rounded-xl p-4 text-sm text-gray-600">
+            <CreditCard
+              size={18}
+              className="mb-2"
+            />
+            Secure payment with SSL
+            encryption.
           </div>
         </div>
       </div>
+
+      {/* CSS */}
+      <style>
+        {`
+        .label{
+          display:block;
+          font-size:14px;
+          font-weight:600;
+          margin-bottom:8px;
+          color:#374151;
+        }
+
+        .inputBox{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          padding:12px 14px;
+          border:1px solid #e5e7eb;
+          border-radius:16px;
+          background:#f9fafb;
+        }
+
+        .inputBox:focus-within{
+          border-color:#2563eb;
+          background:white;
+        }
+
+        .input{
+          width:100%;
+          background:transparent;
+          outline:none;
+        }
+
+        .paymentCard{
+          display:flex;
+          align-items:center;
+          gap:12px;
+          padding:16px;
+          border:1px solid #e5e7eb;
+          border-radius:16px;
+          cursor:pointer;
+          transition:0.3s;
+        }
+
+        .paymentCard:hover{
+          border-color:#2563eb;
+          background:#eff6ff;
+        }
+
+        .error{
+          color:red;
+          font-size:12px;
+          margin-top:5px;
+          min-height:16px;
+        }
+        `}
+      </style>
     </section>
   );
 }
 
 export default CheckoutPage;
-
-
-

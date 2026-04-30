@@ -1,28 +1,26 @@
-import React from 'react'
-import { Navigate, Outlet } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
-const AdminRoute = ({children}) => {
-  const token = localStorage.getItem('token');
+const AdminRoute = () => {
+  const token = localStorage.getItem("token");
 
-  if(!token) {
-    return <Navigate to="/admin"/>
+  if (!token) {
+    return <Navigate to="/admin" replace />;
   }
 
   try {
     const decoded = jwtDecode(token);
-    if (decoded?.role !== 'admin') {
-      return <Navigate to="/admin"/>
+
+    if (decoded?.role !== "admin") {
+      return <Navigate to="/admin" replace />;
     }
+
+    return <Outlet />; // ✅ CLEAN FIX
   } catch (error) {
-    localStorage.removeItem('token');
-    return <Navigate to="/admin"/>
+    localStorage.removeItem("token");
+    return <Navigate to="/admin" replace />;
   }
+};
 
-  return children ?  children : <Outlet/>;
-}
-
-export default AdminRoute
-
-
-
+export default AdminRoute;

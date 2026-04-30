@@ -1,205 +1,133 @@
-import React, { useState, useEffect } from "react";
-import { FiShoppingCart, FiHeart, FiStar } from "react-icons/fi";
-import { getImgUrl } from "../../utils/getImgUrl";
+import React from "react";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../redux/features/cart/cartSlice";
-import LikeButton from "../../components/LikeButton";
+import { getImgUrl } from "../../utils/getImgUrl";
+import { FiArrowRight, FiBookOpen } from "react-icons/fi";
 
 function BANNER() {
-  const dispatch = useDispatch();
-  // Temporarily use static data to show the UI
-  const allBooks = [
-    {
-      _id: 1,
-      title: "The Great Gatsby",
-      description: "A classic American novel set in the Jazz Age.",
-      coverImage: "book-1.png",
-      newPrice: 19.99,
-      oldPrice: 29.99,
-      likes: []
-    },
-    {
-      _id: 2,
-      title: "To Kill a Mockingbird",
-      description: "Harper Lee's Pulitzer Prize-winning novel.",
-      coverImage: "book-2.png",
-      newPrice: 14.99,
-      oldPrice: 24.99,
-      likes: []
-    },
-    {
-      _id: 3,
-      title: "1984",
-      description: "George Orwell's dystopian masterpiece.",
-      coverImage: "book-3.png",
-      newPrice: 12.99,
-      oldPrice: 19.99,
-      likes: []
-    },
-    {
-      _id: 4,
-      title: "Pride and Prejudice",
-      description: "Jane Austen's beloved romance novel.",
-      coverImage: "book-4.png",
-      newPrice: 16.99,
-      oldPrice: 22.99,
-      likes: []
-    },
-    {
-      _id: 5,
-      title: "The Catcher in the Rye",
-      description: "J.D. Salinger's coming-of-age story.",
-      coverImage: "book-5.png",
-      newPrice: 11.99,
-      oldPrice: 18.99,
-      likes: []
-    },
-    {
-      _id: 6,
-      title: "Harry Potter",
-      description: "J.K. Rowling's magical adventure.",
-      coverImage: "book-6.png",
-      newPrice: 17.99,
-      oldPrice: 25.99,
-      likes: []
-    }
+  const featuredBooks = [
+    { _id: 1, title: "The Great Gatsby", coverImage: "book-1.png", price: 1999 },
+    { _id: 2, title: "1984", coverImage: "book-3.png", price: 1499 },
+    { _id: 3, title: "Harry Potter", coverImage: "book-5.png", price: 1799 },
   ];
 
-  const [featuredBooks, setFeaturedBooks] = useState(allBooks.slice(0, 6));
-
-  console.log("Banner component rendered with static data");
-  console.log("Featured books:", featuredBooks);
-
-  const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
-  };
-
-  // Remove loading check since we're using static data
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-100 py-16">
-      <div className="container mx-auto px-4">
-        {/* Hero Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-            Welcome to <span className="text-blue-600">Book-Mart</span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover millions of books at unbeatable prices. Free shipping on orders over $50!
-          </p>
-          <div className="mt-6 flex justify-center gap-4">
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Shop Now
-            </button>
-            <Link to="/categories" className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 hover:text-white transition-colors inline-block text-center">
-              View Categories
-            </Link>
+    <section className="relative bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden">
+
+      {/* soft background glow */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-300 opacity-20 blur-3xl rounded-full"></div>
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-purple-300 opacity-20 blur-3xl rounded-full"></div>
+
+      <div className="container mx-auto px-4 py-12 lg:py-16 relative z-10">
+
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+          {/* LEFT */}
+          <div className="space-y-6">
+
+            <span className="inline-flex items-center gap-2 bg-white/70 backdrop-blur-md border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+              <FiBookOpen />
+              Trusted Book Store
+            </span>
+
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
+              Discover Books That <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                Inspire You
+              </span>
+            </h1>
+
+            <p className="text-gray-600 text-base max-w-lg leading-relaxed">
+              Explore bestselling novels, trending books, and academic resources in a modern reading experience designed for you.
+            </p>
+
+            <div className="flex gap-4">
+              <Link
+                to="/shop"
+                className="group bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+              >
+                Browse Books
+                <FiArrowRight className="group-hover:translate-x-1 transition" />
+              </Link>
+
+              <Link
+                to="/about"
+                className="border border-indigo-200 text-indigo-700 px-6 py-3 rounded-xl hover:bg-white/70 backdrop-blur transition"
+              >
+                Learn More
+              </Link>
+            </div>
+
+            {/* STATS */}
+            <div className="flex gap-8 pt-4">
+              {[
+                { label: "Books", value: "10K+" },
+                { label: "Users", value: "5K+" },
+                { label: "Rating", value: "4.9★" },
+              ].map((item, i) => (
+                <div key={i} className="text-center">
+                  <p className="font-bold text-xl text-gray-900">{item.value}</p>
+                  <p className="text-gray-500 text-sm">{item.label}</p>
+                </div>
+              ))}
+            </div>
+
           </div>
-        </div>
 
-        {/* Featured Books Grid */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Featured Books</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredBooks.map((book) => (
-              <div key={book._id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                {/* Book Image */}
-                <div className="relative">
-                  <Link to={`/books/${book._id}`}>
-                    <img
-                      src={`${getImgUrl(book?.coverImage)}`}
-                      alt={book.title}
-                      className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </Link>
-                  {/* Like Button */}
-                  <div className="absolute top-3 right-3">
-                    <LikeButton
-                      bookId={book._id}
-                      initialLikes={book.likes?.length || 0}
-                      initialLiked={book.likes?.some(like => like.userId === localStorage.getItem('uid'))}
-                    />
-                  </div>
-                  {/* Discount Badge */}
-                  {book?.oldPrice && book?.newPrice && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
-                      {Math.round(((book.oldPrice - book.newPrice) / book.oldPrice) * 100)}% OFF
-                    </div>
-                  )}
-                </div>
+          {/* RIGHT */}
+          <div className="grid grid-cols-2 gap-5">
 
-                {/* Book Details */}
-                <div className="p-4">
-                  <Link to={`/books/${book._id}`}>
-                    <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 mb-2 line-clamp-2">
-                      {book?.title}
-                    </h3>
-                  </Link>
-
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {book?.description}
-                  </p>
-
-                  {/* Rating */}
-                  <div className="flex items-center mb-3">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <FiStar key={i} className="w-4 h-4 fill-current" />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-500 ml-2">(4.5)</span>
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-gray-900">
-                        ${book?.newPrice?.toFixed(2)}
-                      </span>
-                      {book?.oldPrice && (
-                        <span className="text-lg text-gray-500 line-through">
-                          ${book?.oldPrice?.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleAddToCart(book);
-                    }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <FiShoppingCart className="w-5 h-5" />
-                    Add to Cart
-                  </button>
-                </div>
+            {/* MAIN CARD */}
+            <Link
+              to={`/books/${featuredBooks[0]._id}`}
+              className="col-span-2 group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="overflow-hidden">
+                <img
+                  src={getImgUrl(featuredBooks[0].coverImage)}
+                  className="h-56 w-full object-cover group-hover:scale-110 transition duration-500"
+                />
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Call to Action */}
-        <div className="text-center bg-white rounded-xl shadow-lg p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Join Our Book Community</h3>
-          <p className="text-gray-600 mb-6">
-            Get exclusive access to new releases, author events, and special discounts
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Subscribe
-            </button>
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition">
+                  {featuredBooks[0].title}
+                </h3>
+                <p className="text-indigo-600 font-bold mt-1">
+                  Rs. {featuredBooks[0].price}
+                </p>
+              </div>
+            </Link>
+
+            {/* SMALL CARDS */}
+            {featuredBooks.slice(1).map((book) => (
+              <Link
+                key={book._id}
+                to={`/books/${book._id}`}
+                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              >
+                <div className="overflow-hidden">
+                  <img
+                    src={getImgUrl(book.coverImage)}
+                    className="h-36 w-full object-cover group-hover:scale-110 transition duration-500"
+                  />
+                </div>
+
+                <div className="p-3">
+                  <h3 className="text-sm font-medium text-gray-800 line-clamp-1 group-hover:text-indigo-600">
+                    {book.title}
+                  </h3>
+                  <p className="text-indigo-600 font-semibold text-sm mt-1">
+                    Rs. {book.price}
+                  </p>
+                </div>
+              </Link>
+            ))}
+
           </div>
+
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
