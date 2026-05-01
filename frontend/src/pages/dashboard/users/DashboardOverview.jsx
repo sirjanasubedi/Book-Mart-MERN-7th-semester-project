@@ -26,7 +26,7 @@ const DashboardOverview = () => {
   const completedOrders = orders.filter(order => order.paymentStatus === "COMPLETE").length;
 
   // Get recent orders (last 3)
-  const recentOrders = orders
+  const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 3);
 

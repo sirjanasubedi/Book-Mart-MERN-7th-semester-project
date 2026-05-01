@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import getBaseUrl from '../utils/baseURL';
 
-const generateUniqueId = () => `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateUniqueId = () => `BM-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 const PaymentForm = () => {
   const location = useLocation();
@@ -12,6 +12,13 @@ const PaymentForm = () => {
   const [orderData, setOrderData] = useState(location.state || null);
   const [loading, setLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [esewaForm, setEsewaForm] = useState(null);
+
+  useEffect(() => {
+    if (!esewaForm) return;
+
+    document.getElementById('esewa-payment-form')?.submit();
+  }, [esewaForm]);
 
   useEffect(() => {
     if (!orderData) {
@@ -35,21 +42,37 @@ const PaymentForm = () => {
     setPaymentError('');
 
     try {
+      const transactionUuid = generateUniqueId();
+
       const response = await axios.post(`${getBaseUrl()}/initiate-payment`, {
-        amount: orderData.totalPrice,
-        productId: generateUniqueId(),
+        amount: Number(orderData.totalPrice),
+        productId: transactionUuid,
+        productIds: orderData.productIds,
+        orderId: orderData._id || orderData.orderId,
       });
 
-      localStorage.setItem('pendingOrder', JSON.stringify(orderData));
-
-      const paymentUrl = response.data?.url || response.data?.paymentUrl || response.data?.redirectUrl;
+      const paymentUrl = response.data?.paymentUrl || response.data?.url;
+      const formData = response.data?.formData;
       if (!paymentUrl) {
         console.error('Missing payment URL in response:', response.data);
         setPaymentError('Unable to start eSewa payment. Please try again later.');
         return;
       }
 
-      window.location.href = paymentUrl;
+      localStorage.setItem(
+        'pendingOrder',
+        JSON.stringify({
+          ...orderData,
+          transactionUuid: formData?.transaction_uuid,
+        })
+      );
+
+      if (response.data?.mock || !formData) {
+        window.location.href = paymentUrl;
+        return;
+      }
+
+      setEsewaForm({ paymentUrl, formData });
     } catch (error) {
       console.error('Error initiating payment:', error);
       setPaymentError(error.response?.data?.message || 'Error initiating payment. Please try again.');
@@ -81,9 +104,21 @@ const PaymentForm = () => {
           {loading ? 'Processing...' : 'Pay with eSewa'}
         </button>
       </form>
+
+      {esewaForm && (
+        <form
+          id="esewa-payment-form"
+          action={esewaForm.paymentUrl}
+          method="POST"
+          className="hidden"
+        >
+          {Object.entries(esewaForm.formData).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} readOnly />
+          ))}
+        </form>
+      )}
     </div>
   );
 };
 
 export default PaymentForm;
-

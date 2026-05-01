@@ -103,13 +103,28 @@ function CheckoutPage() {
 
     try {
       if (paymentMethod === "esewa") {
+        const res = await axios.post(
+          `${getBaseUrl()}/api/orders`,
+          {
+            ...newOrder,
+            paymentStatus: "PENDING",
+          }
+        );
+
+        const pendingEsewaOrder = {
+          ...newOrder,
+          _id: res.data._id,
+          orderId: res.data._id,
+          paymentStatus: "PENDING",
+        };
+
         localStorage.setItem(
           "pendingOrder",
-          JSON.stringify(newOrder)
+          JSON.stringify(pendingEsewaOrder)
         );
 
         navigate("/payment", {
-          state: newOrder,
+          state: pendingEsewaOrder,
         });
       } else {
         const res = await axios.post(

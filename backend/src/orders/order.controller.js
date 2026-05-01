@@ -1,9 +1,25 @@
 const Order = require("./order.model");
-const Transaction = require("../model/Transation.model");
+const Transaction = require("../model/Transaction.model");
+
+const normalizeOrderPayload = (payload) => ({
+  ...payload,
+  address:
+    typeof payload.address === "object"
+      ? payload.address
+      : {
+          city: payload.city,
+          country: payload.country,
+          state: payload.state,
+          zipcode: payload.zipcode,
+        },
+  productIds: Array.isArray(payload.productIds)
+    ? payload.productIds.map((item) => item?._id || item)
+    : [],
+});
 
 const createAOrder = async (req, res) => {
   try {
-    const newOrder = new Order(req.body);
+    const newOrder = new Order(normalizeOrderPayload(req.body));
     await newOrder.save();
     res.status(201).json(newOrder);
   } catch (error) {
@@ -13,9 +29,21 @@ const createAOrder = async (req, res) => {
 
 const completeEsewaOrder = async (req, res) => {
   try {
+    const orderId = req.body.orderId || req.body._id || req.body.transactionUuid;
+
     if (req.body.mock) {
+      if (orderId) {
+        const updatedOrder = await Order.findByIdAndUpdate(
+          orderId,
+          { paymentStatus: "COMPLETE", paymentMethod: "eSewa" },
+          { new: true }
+        );
+
+        if (updatedOrder) return res.status(200).json(updatedOrder);
+      }
+
       const newOrder = new Order({
-        ...req.body,
+        ...normalizeOrderPayload(req.body),
         paymentStatus: "COMPLETE",
         paymentMethod: "eSewa",
       });
@@ -24,19 +52,28 @@ const completeEsewaOrder = async (req, res) => {
     }
 
     const transaction = await Transaction.findOne({
-      product_id: req.body.productId || req.body.productIds?.[0],
+      transaction_uuid: req.body.transactionUuid || req.body.productId,
     });
 
     if (!transaction || transaction.status !== "COMPLETE") {
       return res.status(400).json({ message: "Payment not verified" });
     }
 
+    if (orderId) {
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { paymentStatus: "COMPLETE", paymentMethod: "eSewa" },
+        { new: true }
+      );
+
+      if (updatedOrder) return res.status(200).json(updatedOrder);
+    }
+
     const newOrder = new Order({
-      ...req.body,
+      ...normalizeOrderPayload(req.body),
       paymentStatus: "COMPLETE",
       paymentMethod: "eSewa",
     });
-
     await newOrder.save();
     res.status(201).json(newOrder);
   } catch (error) {

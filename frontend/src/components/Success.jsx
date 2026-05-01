@@ -1,83 +1,86 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { base64Decode } from "esewajs";
 import axios from "axios";
+import getBaseUrl from "../utils/baseURL";
 
 const Success = () => {
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState(null);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
-  const token = queryParams.get("data");
+  const encodedData = queryParams.get("data");
   const isMock = queryParams.get("mock") === "true";
 
-  const verifyPayment = async () => {
-    try {
-      let finalOrderId = null;
+  useEffect(() => {
+    const verifyPayment = async () => {
+      try {
+        const savedOrder = localStorage.getItem("pendingOrder");
+        const pendingOrder = savedOrder ? JSON.parse(savedOrder) : null;
 
-      // ---------------- MOCK ----------------
-      if (isMock) {
-        const res = await axios.post(
-          "http://localhost:5000/api/orders/esewa",
-          {
+        if (!pendingOrder && !isMock) {
+          throw new Error("Pending order details were not found.");
+        }
+
+        let finalOrderId = null;
+
+        if (isMock) {
+          const res = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
+            ...(pendingOrder || {}),
             paymentStatus: "COMPLETE",
             paymentMethod: "eSewa",
             mock: true,
-          }
-        );
-
-        finalOrderId = res.data._id;
-      }
-
-      // ---------------- REAL PAYMENT ----------------
-      else if (token) {
-        const decoded = base64Decode(token);
-
-        const paymentResponse = await axios.post(
-          "http://localhost:5000/payment-status",
-          {
-            product_id: decoded.transaction_uuid,
-          }
-        );
-
-        if (paymentResponse.status === 200) {
-          const res = await axios.post(
-            "http://localhost:5000/api/orders/esewa",
-            {
-              productId: decoded.transaction_uuid,
-              paymentStatus: "COMPLETE",
-            }
-          );
+          });
 
           finalOrderId = res.data._id;
+        } else if (encodedData) {
+          const paymentResponse = await axios.post(`${getBaseUrl()}/payment-status`, {
+            data: encodedData,
+          });
+
+          if (paymentResponse.data?.transaction?.status !== "COMPLETE") {
+            throw new Error("Payment was not completed.");
+          }
+
+          const res = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
+            ...pendingOrder,
+            transactionUuid: paymentResponse.data.transaction.transaction_uuid,
+            productId: paymentResponse.data.transaction.transaction_uuid,
+            paymentStatus: "COMPLETE",
+            paymentMethod: "eSewa",
+          });
+
+          finalOrderId = res.data._id;
+        } else {
+          throw new Error("eSewa did not return payment data.");
         }
+
+        localStorage.removeItem("pendingOrder");
+        setOrderId(finalOrderId);
+      } catch (err) {
+        console.error(err);
+        setError(err.response?.data?.message || err.message || "Unable to verify payment.");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // cleanup (safe even if not exists)
-      localStorage.removeItem("pendingOrder");
-
-      setOrderId(finalOrderId);
-    } catch (err) {
-      console.error(err);
-      // ❌ DO NOT SHOW ERROR PAGE — just continue
-    } finally {
-      setLoading(false);
-
-      // auto redirect to home (or order page)
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
-    }
-  };
+    verifyPayment();
+  }, [encodedData, isMock]);
 
   useEffect(() => {
-    verifyPayment();
-  }, []);
+    if (loading || error) return;
 
-  // ---------------- LOADING ----------------
+    const timer = setTimeout(() => {
+      navigate("/");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [error, loading, navigate]);
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -86,18 +89,29 @@ const Success = () => {
     );
   }
 
-  // ---------------- SUCCESS UI ----------------
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-red-50">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <h1 className="text-2xl font-bold text-red-600">Payment Verification Failed</h1>
+          <p className="text-gray-600 mt-2">{error}</p>
+          <button
+            onClick={() => navigate("/checkout")}
+            className="mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex items-center justify-center bg-green-50">
       <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+        <h1 className="text-2xl font-bold text-green-600">Payment Successful</h1>
 
-        <h1 className="text-2xl font-bold text-green-600">
-          Payment Successful 🎉
-        </h1>
-
-        <p className="text-gray-600 mt-2">
-          Thank you! Your order has been placed.
-        </p>
+        <p className="text-gray-600 mt-2">Thank you! Your order has been placed.</p>
 
         {orderId && (
           <p className="mt-3 text-sm text-gray-500">
@@ -105,9 +119,7 @@ const Success = () => {
           </p>
         )}
 
-        <p className="text-xs text-gray-400 mt-4">
-          Redirecting to homepage...
-        </p>
+        <p className="text-xs text-gray-400 mt-4">Redirecting to homepage...</p>
       </div>
     </div>
   );
