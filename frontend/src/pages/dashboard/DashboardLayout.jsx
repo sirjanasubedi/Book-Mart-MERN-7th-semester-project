@@ -1,59 +1,100 @@
-import React from "react";
-import { Outlet } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
+const adminLinks = [
+  { name: "Overview", to: "/dashboard" },
+  { name: "Add Book", to: "/dashboard/add-book" },
+  { name: "Manage Books", to: "/dashboard/manage-books" },
+  { name: "Orders", to: "/dashboard/orders" },
+  { name: "Payment Reports", to: "/dashboard/payment-reports" },
+  { name: "Users", to: "/dashboard/users" },
+];
 
 const DashboardLayout = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [adminData, setAdminData] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/admin");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      setAdminData(decoded);
+    } catch (error) {
+      localStorage.removeItem("token");
+      navigate("/admin");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/admin");
+  };
+
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 flex">
 
-      {/* SIDEBAR */}
-      <Sidebar />
+      {/* ✅ SIDEBAR */}
+      <aside className="w-64 bg-white border-r p-6 flex flex-col justify-between">
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-auto p-6">
+        <div>
+          <h2 className="text-xl font-bold mb-6">Admin Panel</h2>
+
+          <nav className="space-y-2">
+            {adminLinks.map((item) => {
+              const isActive = location.pathname === item.to;
+
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`block px-4 py-2 rounded-md text-sm transition ${
+                    isActive
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* ✅ LOGOUT */}
+        <button
+          onClick={handleLogout}
+          className="mt-10 w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition"
+        >
+          Logout
+        </button>
+      </aside>
+
+      {/* ✅ MAIN CONTENT */}
+      <main className="flex-1 p-8">
 
         {/* HEADER */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Dashboard Overview
+          <h1 className="text-2xl font-bold text-gray-800">
+            Welcome back, {adminData?.email || "Admin"}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Welcome back 👋 Here is your system performance
+          <p className="text-sm text-gray-500">
+            Manage your store, books, and orders
           </p>
         </div>
 
-        {/* CONTENT AREA */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-          {/* MAIN CONTENT */}
-          <div className="lg:col-span-8 bg-white p-6 rounded-xl shadow-md">
-            <Outlet />
-          </div>
-
-          {/* RIGHT PANEL */}
-          <div className="lg:col-span-4 space-y-6">
-
-            <div className="bg-white p-5 rounded-xl shadow-md">
-              <h2 className="text-sm font-semibold mb-3">
-                Quick Overview
-              </h2>
-              <p className="text-xs text-gray-500">
-                Use left menu to manage system data efficiently.
-              </p>
-            </div>
-
-            <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
-              <h2 className="text-sm font-semibold text-blue-700">
-                Admin Tip
-              </h2>
-              <p className="text-xs text-blue-600 mt-2">
-                Keep books updated regularly for better sales analytics.
-              </p>
-            </div>
-
-          </div>
-
+        {/* PAGE CONTENT */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <Outlet />
         </div>
+
       </main>
     </div>
   );

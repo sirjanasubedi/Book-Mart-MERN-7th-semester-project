@@ -5,17 +5,18 @@ const Book = require("./book.model");
 // =====================
 const postABook = async (req, res) => {
   try {
-    const newBook = new Book(req.body);
+    // ✅ If image uploaded, use its path. Otherwise fallback to text value
+    const coverImage = req.file
+      ? `/uploads/${req.file.filename}`
+      : req.body.coverImage;
+
+    const newBook = new Book({ ...req.body, coverImage });
     await newBook.save();
 
-    res.status(201).send({
-      message: "Book created successfully",
-      book: newBook,
-    });
+    res.status(201).send({ message: "Book created successfully", book: newBook });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to create book",
-    });
+    console.error(error);
+    res.status(500).send({ message: "Failed to create book" });
   }
 };
 
@@ -25,12 +26,9 @@ const postABook = async (req, res) => {
 const getAllBooks = async (req, res) => {
   try {
     const books = await Book.find().sort({ createdAt: -1 });
-
     res.status(200).send({ books });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to fetch books",
-    });
+    res.status(500).send({ message: "Failed to fetch books" });
   }
 };
 
@@ -40,16 +38,10 @@ const getAllBooks = async (req, res) => {
 const getSingleBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-
-    if (!book) {
-      return res.status(404).send({ message: "Book not found" });
-    }
-
+    if (!book) return res.status(404).send({ message: "Book not found" });
     res.status(200).send({ book });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to fetch book",
-    });
+    res.status(500).send({ message: "Failed to fetch book" });
   }
 };
 
@@ -58,24 +50,20 @@ const getSingleBook = async (req, res) => {
 // =====================
 const updatedBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const updateData = { ...req.body };
 
-    if (!book) {
-      return res.status(404).send({ message: "Book not found" });
+    // ✅ Only update coverImage if a new file was uploaded
+    if (req.file) {
+      updateData.coverImage = `/uploads/${req.file.filename}`;
     }
 
-    res.status(200).send({
-      message: "Book updated successfully",
-      book,
-    });
+    const book = await Book.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!book) return res.status(404).send({ message: "Book not found" });
+
+    res.status(200).send({ message: "Book updated successfully", book });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to update book",
-    });
+    console.error(error);
+    res.status(500).send({ message: "Failed to update book" });
   }
 };
 
@@ -85,18 +73,10 @@ const updatedBook = async (req, res) => {
 const deleteABook = async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);
-
-    if (!book) {
-      return res.status(404).send({ message: "Book not found" });
-    }
-
-    res.status(200).send({
-      message: "Book deleted successfully",
-    });
+    if (!book) return res.status(404).send({ message: "Book not found" });
+    res.status(200).send({ message: "Book deleted successfully" });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to delete book",
-    });
+    res.status(500).send({ message: "Failed to delete book" });
   }
 };
 
@@ -106,47 +86,31 @@ const deleteABook = async (req, res) => {
 const likeBook = async (req, res) => {
   try {
     const { userId } = req.body;
-
     const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).send({ message: "Book not found" });
 
-    if (!book) {
-      return res.status(404).send({ message: "Book not found" });
-    }
-
-    const alreadyLiked = book.likes.find(
-      (l) => l.userId === userId
-    );
-
+    const alreadyLiked = book.likes.find((l) => l.userId === userId);
     if (alreadyLiked) {
-      book.likes = book.likes.filter(
-        (l) => l.userId !== userId
-      );
+      book.likes = book.likes.filter((l) => l.userId !== userId);
     } else {
       book.likes.push({ userId });
     }
 
     await book.save();
-
     res.status(200).send({ book });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to like book",
-    });
+    res.status(500).send({ message: "Failed to like book" });
   }
 };
 
 // =====================
-// RECOMMENDATION (FIXED SIMPLE)
+// RECOMMENDATIONS
 // =====================
 const getRecommendedBooks = async (req, res) => {
   try {
     const { id } = req.params;
-
     const book = await Book.findById(id);
-
-    if (!book) {
-      return res.status(404).send({ message: "Book not found" });
-    }
+    if (!book) return res.status(404).send({ message: "Book not found" });
 
     const recommendations = await Book.find({
       category: book.category,
@@ -155,15 +119,10 @@ const getRecommendedBooks = async (req, res) => {
 
     res.status(200).send({ recommendations });
   } catch (error) {
-    res.status(500).send({
-      message: "Failed to get recommendations",
-    });
+    res.status(500).send({ message: "Failed to get recommendations" });
   }
 };
 
-// =====================
-// EXPORT
-// =====================
 module.exports = {
   postABook,
   getAllBooks,

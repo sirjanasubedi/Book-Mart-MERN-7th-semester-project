@@ -107,21 +107,16 @@ const router = createBrowserRouter(
       {/* ADMIN */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <AdminRoute>
-            <DashboardLayout />
-          </AdminRoute>
-        }
-      >
-        <Route index element={<DashboardHome />} />
-        <Route path="add-book" element={<AddBook />} />
-        <Route path="edit-book/:id" element={<UpdateBook />} />
-        <Route path="manage-books" element={<ManageBooks />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="payment-reports" element={<PaymentReports />} />
-        <Route path="users" element={<AdminUsers />} />
+      <Route element={<AdminRoute />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardHome />} />
+          <Route path="add-book" element={<AddBook />} />
+          <Route path="edit-book/:id" element={<UpdateBook />} />
+          <Route path="manage-books" element={<ManageBooks />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="payment-reports" element={<PaymentReports />} />
+          <Route path="users" element={<AdminUsers />} />
+        </Route>
       </Route>
     </>
   )

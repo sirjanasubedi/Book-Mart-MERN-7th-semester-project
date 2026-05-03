@@ -7,6 +7,8 @@ import { jwtDecode } from "jwt-decode";
 
 const AdminLogin = () => {
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState("");
+
   const navigate = useNavigate();
 
   const {
@@ -15,7 +17,7 @@ const AdminLogin = () => {
     formState: { errors },
   } = useForm();
 
-  // ✅ if already logged in → go dashboard
+  // ✅ auto redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -24,7 +26,7 @@ const AdminLogin = () => {
         const decoded = jwtDecode(token);
 
         if (decoded?.role === "admin") {
-          navigate("/dashboard"); // ✅ FIXED
+          navigate("/dashboard");
         }
       } catch (err) {
         localStorage.removeItem("token");
@@ -46,13 +48,14 @@ const AdminLogin = () => {
 
       const auth = res.data;
 
-      // ❌ not admin check
+      // ❌ not admin
       if (auth.user?.role !== "admin") {
         setMessage("You are not authorized as admin.");
+        setSuccess("");
         return;
       }
 
-      // ✅ save token
+      // save token
       if (auth.token) {
         localStorage.setItem("token", auth.token);
 
@@ -60,22 +63,29 @@ const AdminLogin = () => {
 
         if (decoded?.role !== "admin") {
           setMessage("Invalid admin token.");
+          setSuccess("");
           return;
         }
 
-        alert("Admin login successful!");
+        // ✅ SUCCESS MESSAGE (NO POPUP)
+        setSuccess("Login successful! ...");
+        setMessage("");
 
-        // ✅ IMPORTANT FIX HERE
-        navigate("/dashboard");
+        // redirect after delay
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
       }
     } catch (error) {
       console.log(error);
       setMessage("Invalid email or password");
+      setSuccess("");
     }
   };
 
   return (
-    <div className="h-screen flex justify-center items-center">
+    <div className="h-screen flex justify-center items-center bg-gray-100">
+
       <div className="w-full max-w-sm bg-white shadow-md rounded px-8 py-6">
 
         <h2 className="text-xl font-bold mb-4 text-center">
@@ -115,10 +125,15 @@ const AdminLogin = () => {
             <p className="text-red-500 text-sm mb-2">{message}</p>
           )}
 
+          {/* SUCCESS MESSAGE */}
+          {success && (
+            <p className="text-green-600 text-sm mb-2">{success}</p>
+          )}
+
           {/* BUTTON */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
           >
             Login
           </button>

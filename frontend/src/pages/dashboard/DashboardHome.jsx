@@ -5,7 +5,6 @@ import StatsCard from "./stats/StatsCard";
 import Loading from "../../components/Loading";
 import { toast } from "react-toastify";
 import SalesChart from "./stats/SalesChart";
-import { Link } from "react-router-dom";
 
 const DashboardHome = () => {
   const {
@@ -36,6 +35,7 @@ const DashboardHome = () => {
         ? booksData.books
         : [];
 
+      // ✅ FIX: safe number conversion
       const pendingOrders = allOrders.filter(
         (order) => order.paymentStatus !== "COMPLETE"
       ).length;
@@ -44,9 +44,13 @@ const DashboardHome = () => {
         (order) => order.paymentStatus === "COMPLETE"
       ).length;
 
+      // ✅ FIX: earnings calculation (important)
       const totalEarnings = allOrders
         .filter((order) => order.paymentStatus === "COMPLETE")
-        .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+        .reduce(
+          (sum, order) => sum + Number(order.totalPrice || 0),
+          0
+        );
 
       const bookCounts = {};
 
@@ -96,12 +100,16 @@ const DashboardHome = () => {
           });
 
           salesByMonth[month] =
-            (salesByMonth[month] || 0) + (order.totalPrice || 0);
+            (salesByMonth[month] || 0) +
+            Number(order.totalPrice || 0);
         });
 
-      const monthlySales = Object.entries(salesByMonth)
-        .map(([month, totalSales]) => ({ month, totalSales }))
-        .sort((a, b) => new Date(a.month) - new Date(b.month));
+      const monthlySales = Object.entries(salesByMonth).map(
+        ([month, totalSales]) => ({
+          month,
+          totalSales,
+        })
+      );
 
       const recentOrders = [...allOrders]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -140,50 +148,48 @@ const DashboardHome = () => {
     );
   }
 
+  // ✅ FIX: format earnings properly
+  const formatMoney = (amount) => {
+    return new Intl.NumberFormat("en-NP", {
+      style: "currency",
+      currency: "NPR",
+    }).format(Number(amount || 0));
+  };
+
   return (
     <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Dashboard Overview
-          </h1>
-          <p className="text-sm text-gray-500">
-            Monitor your sales, books, and orders in real time
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <Link
-            to="/dashboard/add-book"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Add Book
-          </Link>
-
-          <Link
-            to="/dashboard/manage-books"
-            className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
-          >
-            Manage Books
-          </Link>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Dashboard Overview
+        </h1>
+        <p className="text-sm text-gray-500">
+          Monitor your sales, books, and orders in real time.
+        </p>
       </div>
 
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
         <StatsCard title="Books" value={stats.totalBooks} />
         <StatsCard title="Orders" value={stats.totalOrders} />
         <StatsCard title="Pending" value={stats.pendingOrders} />
         <StatsCard title="Completed" value={stats.completedOrders} />
-        <StatsCard title="Earnings" value={stats.totalEarnings} />
+
+        {/* ✅ FIXED EARNINGS */}
+        <div className="bg-white p-5 rounded-xl shadow border-l-4 border-green-500">
+          <p className="text-gray-500 text-sm">Earnings</p>
+          <h2 className="text-2xl font-bold text-gray-900 break-words">
+            {formatMoney(stats.totalEarnings)}
+          </h2>
+        </div>
+
       </div>
 
-      {/* CHART + SIDE INFO */}
+      {/* CHART */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* CHART */}
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">
             Monthly Sales
@@ -191,7 +197,6 @@ const DashboardHome = () => {
           <SalesChart data={stats.monthlySales} />
         </div>
 
-        {/* QUICK SUMMARY */}
         <div className="bg-white p-6 rounded-xl shadow space-y-4">
           <h2 className="text-lg font-semibold">Quick Insights</h2>
 
@@ -205,10 +210,9 @@ const DashboardHome = () => {
 
       </div>
 
-      {/* RECENT + POPULAR SECTION */}
+      {/* RECENT + POPULAR */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* RECENT ORDERS */}
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">
             Recent Orders
@@ -231,7 +235,6 @@ const DashboardHome = () => {
           </div>
         </div>
 
-        {/* POPULAR BOOKS */}
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">
             Popular Books

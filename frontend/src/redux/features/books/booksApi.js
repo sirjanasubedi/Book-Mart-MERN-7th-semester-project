@@ -4,10 +4,14 @@ import getBaseUrl from '../../../utils/baseURL';
 const baseQuery = fetchBaseQuery({
   baseUrl: `${getBaseUrl()}/api/books`,
   credentials: 'include',
-  prepareHeaders: (headers) => {
+  prepareHeaders: (headers, { arg }) => {
     const token = localStorage.getItem('token');
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+    }
+    // ✅ Don't set Content-Type for FormData — browser sets it automatically
+    if (arg?.body instanceof FormData) {
+      headers.delete('Content-Type');
     }
     return headers;
   },
@@ -26,11 +30,12 @@ const booksApi = createApi({
       query: (id) => `/${id}`,
       providesTags: (result, error, id) => [{ type: 'Books', id }],
     }),
+    // ✅ No Content-Type header — works with FormData
     addBook: builder.mutation({
-      query: (newBook) => ({
+      query: (formData) => ({
         url: '/create-book',
         method: 'POST',
-        body: newBook,
+        body: formData,
       }),
       invalidatesTags: ['Books'],
     }),
@@ -39,7 +44,6 @@ const booksApi = createApi({
         url: `/edit/${id}`,
         method: 'PUT',
         body: rest,
-        headers: { 'Content-Type': 'application/json' },
       }),
       invalidatesTags: ['Books'],
     }),
@@ -47,14 +51,10 @@ const booksApi = createApi({
       query: (id) => ({
         url: `/${id}`,
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
       }),
       invalidatesTags: ['Books'],
     }),
-
-
-
-addReview: builder.mutation({
+    addReview: builder.mutation({
       query: ({ id, ...reviewData }) => ({
         url: `/${id}/reviews`,
         method: 'POST',
@@ -62,7 +62,6 @@ addReview: builder.mutation({
       }),
       invalidatesTags: ['Books'],
     }),
-
     likeBook: builder.mutation({
       query: ({ id, userId }) => ({
         url: `/${id}/like`,
@@ -71,14 +70,12 @@ addReview: builder.mutation({
       }),
       invalidatesTags: ['Books'],
     }),
-
     trackBookView: builder.mutation({
       query: (id) => ({
         url: `/${id}/view`,
         method: 'POST',
       }),
     }),
-
     getRecommendedBooks: builder.query({
       query: ({ id, category }) => `/${id}/recommendations?category=${category}`,
       providesTags: ['Books'],
@@ -99,28 +96,3 @@ export const {
 } = booksApi;
 
 export default booksApi;
-    
-    
-    
-  
-
-
-
-
-
-//   }),
-// });
-
-// export const {
-//   useFetchAllBooksQuery,
-//   useFetchBookByIdQuery,
-//   useAddBookMutation,
-//   useUpdateBookMutation,
-//   useDeleteBookMutation,
-
-
- 
-
-// } = booksApi;
-
-// export default booksApi;
