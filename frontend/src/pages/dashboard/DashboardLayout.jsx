@@ -6,6 +6,7 @@ const adminLinks = [
   { name: "Overview", to: "/dashboard" },
   { name: "Add Book", to: "/dashboard/add-book" },
   { name: "Manage Books", to: "/dashboard/manage-books" },
+  { name: "Manage Categories", to: "/dashboard/manage-categories" }, // ✅ NEW
   { name: "Orders", to: "/dashboard/orders" },
   { name: "Payment Reports", to: "/dashboard/payment-reports" },
   { name: "Users", to: "/dashboard/users" },
@@ -18,12 +19,10 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       navigate("/admin");
       return;
     }
-
     try {
       const decoded = jwtDecode(token);
       setAdminData(decoded);
@@ -41,16 +40,13 @@ const DashboardLayout = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
 
-      {/* ✅ SIDEBAR */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r p-6 flex flex-col justify-between">
-
         <div>
           <h2 className="text-xl font-bold mb-6">Admin Panel</h2>
-
           <nav className="space-y-2">
             {adminLinks.map((item) => {
               const isActive = location.pathname === item.to;
-
               return (
                 <Link
                   key={item.to}
@@ -68,7 +64,6 @@ const DashboardLayout = () => {
           </nav>
         </div>
 
-        {/* ✅ LOGOUT */}
         <button
           onClick={handleLogout}
           className="mt-10 w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition"
@@ -77,10 +72,8 @@ const DashboardLayout = () => {
         </button>
       </aside>
 
-      {/* ✅ MAIN CONTENT */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 p-8">
-
-        {/* HEADER */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800">
             Welcome back, {adminData?.email || "Admin"}
@@ -89,12 +82,9 @@ const DashboardLayout = () => {
             Manage your store, books, and orders
           </p>
         </div>
-
-        {/* PAGE CONTENT */}
         <div className="bg-white p-6 rounded-lg shadow">
           <Outlet />
         </div>
-
       </main>
     </div>
   );

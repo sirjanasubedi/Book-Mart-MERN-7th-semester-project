@@ -13,21 +13,21 @@ import getBaseUrl from '../../../utils/baseURL';
 
 const UpdateBook = () => {
   const { id } = useParams();
-  const { data: bookData, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
-  // console.log(bookData)
+  const { data: response, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
+  const book = response?.book;
   const [updateBook] = useUpdateBookMutation();
   const { register, handleSubmit, setValue, reset } = useForm();
   useEffect(() => {
-    if (bookData) {
-      setValue('title', bookData.title);
-      setValue('description', bookData.description);
-      setValue('category', bookData?.category);
-      setValue('trending', bookData.trending);
-      setValue('oldPrice', bookData.oldPrice);
-      setValue('newPrice', bookData.newPrice);
-      setValue('coverImage', bookData.coverImage)
+    if (book) {
+      setValue('title', book.title);
+      setValue('description', book.description);
+      setValue('category', book?.category);
+      setValue('trending', book.trending);
+      setValue('oldPrice', book.oldPrice);
+      setValue('newPrice', book.newPrice);
+      setValue('coverImage', book.coverImage)
     }
-  }, [bookData, setValue])
+  }, [book, setValue])
 
   const onSubmit = async (data) => {
     const updateBookData = {
@@ -37,7 +37,7 @@ const UpdateBook = () => {
       trending: data.trending,
       oldPrice: Number(data.oldPrice),
       newPrice: Number(data.newPrice),
-      coverImage: data.coverImage || bookData.coverImage,
+      coverImage: data.coverImage || book.coverImage,
     };
     try {
       await axios.put(`${getBaseUrl()}/api/books/edit/${id}`, updateBookData, {

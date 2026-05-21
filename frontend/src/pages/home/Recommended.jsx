@@ -13,7 +13,9 @@ const Recommended = () => {
     ? data.books
     : [];
 
-  const recommendedBooks = books.slice(0, 10);
+  const recommendedBooks = books.length > 10
+    ? books.slice(10, 20)
+    : books.slice(0, 10);
 
   if (isLoading) {
     return (

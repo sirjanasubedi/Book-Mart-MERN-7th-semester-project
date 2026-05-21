@@ -139,7 +139,7 @@ const ManageBooks = () => {
                     </td>
 
                     <td className="p-3">
-                      ${book.newPrice}
+                      Rs. {book.newPrice}
                     </td>
 
                     {/* ACTIONS */}

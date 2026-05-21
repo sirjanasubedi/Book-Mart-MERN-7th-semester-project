@@ -17,14 +17,12 @@ const AdminLogin = () => {
     formState: { errors },
   } = useForm();
 
-  // ✅ auto redirect if already logged in
+  // ✅ Auto redirect if already logged in as admin
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (token) {
       try {
         const decoded = jwtDecode(token);
-
         if (decoded?.role === "admin") {
           navigate("/dashboard");
         }
@@ -35,57 +33,48 @@ const AdminLogin = () => {
   }, [navigate]);
 
   const onSubmit = async (data) => {
+    setMessage("");
+    setSuccess("");
+
     try {
       const res = await axios.post(
         `${getBaseUrl()}/api/auth/admin`,
         data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       const auth = res.data;
 
-      // ❌ not admin
-      if (auth.user?.role !== "admin") {
-        setMessage("You are not authorized as admin.");
-        setSuccess("");
+      if (!auth.token) {
+        setMessage("Invalid credentials.");
         return;
       }
 
-      // save token
-      if (auth.token) {
-        localStorage.setItem("token", auth.token);
+      const decoded = jwtDecode(auth.token);
 
-        const decoded = jwtDecode(auth.token);
-
-        if (decoded?.role !== "admin") {
-          setMessage("Invalid admin token.");
-          setSuccess("");
-          return;
-        }
-
-        // ✅ SUCCESS MESSAGE (NO POPUP)
-        setSuccess("Login successful! ...");
-        setMessage("");
-
-        // redirect after delay
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+      // ✅ Block normal users from admin login
+      if (decoded?.role !== "admin") {
+        setMessage("Access denied. This page is for admins only.");
+        return;
       }
+
+      localStorage.setItem("token", auth.token);
+      setSuccess("Login successful! Redirecting...");
+      setMessage("");
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+
     } catch (error) {
       console.log(error);
-      setMessage("Invalid email or password");
+      setMessage("Invalid email or password.");
       setSuccess("");
     }
   };
 
   return (
     <div className="h-screen flex justify-center items-center bg-gray-100">
-
       <div className="w-full max-w-sm bg-white shadow-md rounded px-8 py-6">
 
         <h2 className="text-xl font-bold mb-4 text-center">

@@ -1,127 +1,120 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { FiArrowRight } from "react-icons/fi";
 import { getImgUrl } from "../../utils/getImgUrl";
-import { FiArrowRight, FiBookOpen } from "react-icons/fi";
 
 function BANNER() {
-  const featuredBooks = [
-    { _id: 1, title: "The Great Gatsby", coverImage: "book-1.png", price: 1999 },
-    { _id: 2, title: "1984", coverImage: "book-3.png", price: 1499 },
-    { _id: 3, title: "Harry Potter", coverImage: "book-5.png", price: 1799 },
-  ];
-
   return (
-    <section className="relative bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden">
+    <section className="relative overflow-hidden bg-[#f8f8fc]">
 
-      {/* soft background glow */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-300 opacity-20 blur-3xl rounded-full"></div>
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-purple-300 opacity-20 blur-3xl rounded-full"></div>
+      {/* background blur */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-200/40 blur-3xl rounded-full"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-200/40 blur-3xl rounded-full"></div>
 
-      <div className="container mx-auto px-4 py-12 lg:py-16 relative z-10">
+      <div className="container mx-auto px-6 py-16 lg:py-24 relative z-10">
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-14 items-center">
 
-          {/* LEFT */}
-          <div className="space-y-6">
+          {/* LEFT CONTENT */}
+          <div>
 
-            <span className="inline-flex items-center gap-2 bg-white/70 backdrop-blur-md border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm">
-              <FiBookOpen />
-              Trusted Book Store
+            <span className="inline-block px-4 py-2 bg-white shadow-sm border border-gray-100 rounded-full text-sm font-medium text-indigo-600 mb-6">
+              📚 Trusted Online Bookstore
             </span>
 
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
-              Discover Books That <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                Inspire You
+            <h1 className="text-5xl lg:text-6xl font-black leading-tight text-gray-900">
+              Discover Your
+              <span className="block text-indigo-600">
+                Next Favorite Book
               </span>
             </h1>
 
-            <p className="text-gray-600 text-base max-w-lg leading-relaxed">
-              Explore bestselling novels, trending books, and academic resources in a modern reading experience designed for you.
+            <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
+              Explore bestselling novels, academic books, and inspiring reads
+              from thousands of collections designed for modern readers.
             </p>
 
-            <div className="flex gap-4">
+            {/* BUTTONS */}
+            <div className="flex flex-wrap gap-4 mt-8">
+
               <Link
                 to="/shop"
-                className="group bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                className="group inline-flex items-center gap-2 bg-indigo-600 text-white px-7 py-4 rounded-2xl font-semibold shadow-lg hover:bg-indigo-700 transition duration-300"
               >
-                Browse Books
+                Explore Books
                 <FiArrowRight className="group-hover:translate-x-1 transition" />
               </Link>
 
               <Link
                 to="/about"
-                className="border border-indigo-200 text-indigo-700 px-6 py-3 rounded-xl hover:bg-white/70 backdrop-blur transition"
+                className="px-7 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition font-medium text-gray-700"
               >
                 Learn More
               </Link>
+
             </div>
 
             {/* STATS */}
-            <div className="flex gap-8 pt-4">
-              {[
-                { label: "Books", value: "10K+" },
-                { label: "Users", value: "5K+" },
-                { label: "Rating", value: "4.9★" },
-              ].map((item, i) => (
-                <div key={i} className="text-center">
-                  <p className="font-bold text-xl text-gray-900">{item.value}</p>
-                  <p className="text-gray-500 text-sm">{item.label}</p>
-                </div>
-              ))}
+            <div className="flex gap-10 mt-12">
+
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900">10K+</h3>
+                <p className="text-gray-500 mt-1">Books Available</p>
+              </div>
+
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900">5K+</h3>
+                <p className="text-gray-500 mt-1">Happy Readers</p>
+              </div>
+
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900">4.9★</h3>
+                <p className="text-gray-500 mt-1">User Rating</p>
+              </div>
+
             </div>
 
           </div>
 
-          {/* RIGHT */}
-          <div className="grid grid-cols-2 gap-5">
+          {/* RIGHT SIDE */}
+          <div className="relative flex justify-center">
 
-            {/* MAIN CARD */}
-            <Link
-              to={`/books/${featuredBooks[0]._id}`}
-              className="col-span-2 group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="overflow-hidden">
+            {/* Main Book */}
+            <div className="relative">
+
+              {/* floating card */}
+              <div className="absolute -top-6 -left-6 bg-white px-5 py-3 rounded-2xl shadow-xl border border-gray-100">
+                <p className="text-sm text-gray-500">Popular This Week</p>
+                <h4 className="font-bold text-gray-900">
+                  Harry Potter Series
+                </h4>
+              </div>
+
+              {/* main image */}
+              <div className="bg-white p-4 rounded-[2rem] shadow-2xl rotate-[-4deg] hover:rotate-0 transition duration-500">
+
                 <img
-                  src={getImgUrl(featuredBooks[0].coverImage)}
-                  className="h-56 w-full object-cover group-hover:scale-110 transition duration-500"
+                  src={getImgUrl("book-5.png")}
+                  alt="Book Cover"
+                  className="w-[320px] lg:w-[380px] object-cover rounded-2xl"
                 />
+
               </div>
 
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition">
-                  {featuredBooks[0].title}
-                </h3>
-                <p className="text-indigo-600 font-bold mt-1">
-                  Rs. {featuredBooks[0].price}
-                </p>
-              </div>
-            </Link>
+              {/* small stacked books */}
+              <img
+                src={getImgUrl("book-1.png")}
+                alt=""
+                className="absolute -bottom-10 -left-16 w-32 rounded-xl shadow-xl rotate-[-12deg] hidden md:block"
+              />
 
-            {/* SMALL CARDS */}
-            {featuredBooks.slice(1).map((book) => (
-              <Link
-                key={book._id}
-                to={`/books/${book._id}`}
-                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
-              >
-                <div className="overflow-hidden">
-                  <img
-                    src={getImgUrl(book.coverImage)}
-                    className="h-36 w-full object-cover group-hover:scale-110 transition duration-500"
-                  />
-                </div>
+              <img
+                src={getImgUrl("book-3.png")}
+                alt=""
+                className="absolute -top-10 -right-14 w-32 rounded-xl shadow-xl rotate-[10deg] hidden md:block"
+              />
 
-                <div className="p-3">
-                  <h3 className="text-sm font-medium text-gray-800 line-clamp-1 group-hover:text-indigo-600">
-                    {book.title}
-                  </h3>
-                  <p className="text-indigo-600 font-semibold text-sm mt-1">
-                    Rs. {book.price}
-                  </p>
-                </div>
-              </Link>
-            ))}
+            </div>
 
           </div>
 
@@ -131,4 +124,4 @@ function BANNER() {
   );
 }
 
-export default BANNER;
+export default BANNER; 

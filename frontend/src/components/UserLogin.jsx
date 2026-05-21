@@ -32,7 +32,7 @@ const UserLogin = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { loginUser } = useAuth();
+  const { loginUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,12 +46,17 @@ const UserLogin = () => {
     setSuccessMessage("");
 
     try {
-      await loginUser(data.email, data.password);
+      const response = await loginUser(data.email, data.password);
 
-      // ✅ Show success message (NO ALERT)
+      // ✅ Block admin from logging in here
+      if (response?.user?.role === "admin") {
+        await logout();
+        setMessage("Admins must use the Admin Login page.");
+        setLoading(false);
+        return;
+      }
+
       setSuccessMessage("Login successful!");
-
-      // ✅ Redirect after short delay (smooth UX)
       setTimeout(() => {
         navigate(from, { replace: true });
       }, 800);
@@ -65,12 +70,10 @@ const UserLogin = () => {
 
   return (
     <div className="h-screen flex justify-center items-center bg-gray-50">
-
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm"
       >
-
         {/* TITLE */}
         <h2 className="text-2xl font-bold mb-6 text-center">
           User Login
@@ -115,7 +118,6 @@ const UserLogin = () => {
         </button>
 
       </form>
-
     </div>
   );
 };

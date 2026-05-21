@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import InputField from './InputField'
-import SelectField from './SelectField'
 import { useForm } from 'react-hook-form';
 import { useAddBookMutation } from '../../../redux/features/books/booksApi';
 import Swal from 'sweetalert2';
+import axios from 'axios';
+import getBaseUrl from '../../../utils/baseURL';
 
 const AddBook = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
@@ -11,16 +12,50 @@ const AddBook = () => {
   const [imageFileName, setImageFileName] = useState('');
   const [addBook, { isLoading }] = useAddBookMutation();
 
+  const [categories, setCategories] = useState([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${getBaseUrl()}/api/categories`);
+      setCategories(res.data);
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    setCategoryError('');
+    if (!newCategoryName.trim()) {
+      setCategoryError('Please enter a category name.');
+      return;
+    }
+    setCategoryLoading(true);
+    try {
+      await axios.post(`${getBaseUrl()}/api/categories`, { name: newCategoryName.trim() });
+      setNewCategoryName('');
+      setShowAddCategory(false);
+      await fetchCategories();
+      Swal.fire({ title: 'Category Added!', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      setCategoryError(err.response?.data?.message || 'Failed to add category.');
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
-      // ✅ Use FormData to send both text fields and image file
       const formData = new FormData();
-
       Object.keys(data).forEach((key) => formData.append(key, data[key]));
-
-      if (imageFile) {
-        formData.append("coverImage", imageFile);
-      }
+      if (imageFile) formData.append("coverImage", imageFile);
 
       await addBook(formData).unwrap();
 
@@ -56,20 +91,52 @@ const AddBook = () => {
         <InputField label="Title" name="title" placeholder="Enter book title" register={register} />
         <InputField label="Description" name="description" placeholder="Enter book description" type="textarea" register={register} />
 
-        <SelectField
-          label="Category"
-          name="category"
-          options={[
-            { value: '', label: 'Choose A Category' },
-            { value: 'business', label: 'Business' },
-            { value: 'technology', label: 'Technology' },
-            { value: 'fiction', label: 'Fiction' },
-            { value: 'horror', label: 'Horror' },
-            { value: 'adventure', label: 'Adventure' },
-            { value: 'novel', label: 'Novel' },
-          ]}
-          register={register}
-        />
+        {/* ── Dynamic Category Dropdown ── */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+          <select
+            {...register('category', { required: true })}
+            className="w-full border rounded p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="">Choose A Category</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          {errors.category && <p className="text-red-500 text-xs mt-1">Category is required.</p>}
+
+          <button
+            type="button"
+            onClick={() => { setShowAddCategory(!showAddCategory); setCategoryError(''); }}
+            className="mt-2 text-sm text-blue-600 hover:underline"
+          >
+            {showAddCategory ? '✕ Cancel' : '+ Add New Category'}
+          </button>
+
+          {showAddCategory && (
+            <div className="mt-2 flex gap-2 items-center">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                placeholder="e.g. Biography"
+                className="flex-1 border rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                type="button"
+                onClick={handleAddCategory}
+                disabled={categoryLoading}
+                className="bg-blue-600 text-white text-sm px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {categoryLoading ? '...' : 'Save'}
+              </button>
+            </div>
+          )}
+          {categoryError && <p className="text-red-500 text-xs mt-1">{categoryError}</p>}
+        </div>
 
         <div className="mb-4">
           <label className="inline-flex items-center">
@@ -81,7 +148,6 @@ const AddBook = () => {
         <InputField label="Old Price" name="oldPrice" type="number" placeholder="Old Price" register={register} />
         <InputField label="New Price" name="newPrice" type="number" placeholder="New Price" register={register} />
 
-        {/* ✅ Cover Image Upload */}
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image</label>
           <input

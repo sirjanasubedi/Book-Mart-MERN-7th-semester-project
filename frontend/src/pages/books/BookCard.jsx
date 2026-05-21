@@ -18,6 +18,8 @@ const BookCard = ({ book }) => {
 
   if (!book) return null;
 
+  const isAdmin = currentUser?.role === "admin";
+
   const handleAddToCart = (e) => {
     e.preventDefault();
 
@@ -32,9 +34,7 @@ const BookCard = ({ book }) => {
   const discount =
     book.oldPrice > book.newPrice
       ? Math.round(
-          ((book.oldPrice - book.newPrice) /
-            book.oldPrice) *
-            100
+          ((book.oldPrice - book.newPrice) / book.oldPrice) * 100
         )
       : 0;
 
@@ -88,9 +88,7 @@ const BookCard = ({ book }) => {
           {[...Array(5)].map((_, i) => (
             <FiStar key={i} className="fill-current" />
           ))}
-          <span className="text-sm text-gray-500 ml-1">
-            (4.8)
-          </span>
+          <span className="text-sm text-gray-500 ml-1">(4.8)</span>
         </div>
 
         {/* Description */}
@@ -103,7 +101,6 @@ const BookCard = ({ book }) => {
           <h4 className="text-2xl font-bold text-indigo-700">
             Rs. {book.newPrice}
           </h4>
-
           {book.oldPrice && (
             <p className="text-sm text-gray-400 line-through">
               Rs. {book.oldPrice}
@@ -112,9 +109,9 @@ const BookCard = ({ book }) => {
         </div>
 
         {/* BUTTONS */}
-        <div className="grid grid-cols-2 gap-3 mt-5">
+        <div className={`grid gap-3 mt-5 ${isAdmin ? "grid-cols-1" : "grid-cols-2"}`}>
 
-          {/* View Details */}
+          {/* View Details — always visible */}
           <Link
             to={`/books/${book._id}`}
             className="bg-indigo-50 text-indigo-700 py-2.5 rounded-xl text-center font-semibold hover:bg-indigo-100 transition flex items-center justify-center gap-2"
@@ -123,23 +120,24 @@ const BookCard = ({ book }) => {
             Details
           </Link>
 
-          {/* Logged In */}
-          {currentUser ? (
-            <button
-              onClick={handleAddToCart}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-md"
-            >
-              <FiShoppingCart />
-              Add to Cart
-            </button>
-          ) : (
-            /* Not Logged In */
-            <button
-              onClick={() => navigate("/login")}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-semibold transition shadow-md"
-            >
-              Login to Buy
-            </button>
+          {/* Add to Cart — hidden for admin */}
+          {!isAdmin && (
+            currentUser ? (
+              <button
+                onClick={handleAddToCart}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-md"
+              >
+                <FiShoppingCart />
+                Add to Cart
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-md"
+              >
+                Login to Buy
+              </button>
+            )
           )}
 
         </div>

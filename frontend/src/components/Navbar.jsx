@@ -72,7 +72,7 @@ const Navbar = () => {
 
   const handleSearch = () => {
     if (!query.trim()) return;
-    alert(`Searching for "${query}"`);
+    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     setQuery("");
   };
 

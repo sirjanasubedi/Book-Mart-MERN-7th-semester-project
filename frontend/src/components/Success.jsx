@@ -34,9 +34,10 @@ const Success = () => {
             paymentMethod: "eSewa",
             mock: true,
           });
-
           finalOrderId = res.data._id;
+
         } else if (encodedData) {
+          // Step 1: Verify payment with eSewa
           const paymentResponse = await axios.post(`${getBaseUrl()}/payment-status`, {
             data: encodedData,
           });
@@ -45,6 +46,7 @@ const Success = () => {
             throw new Error("Payment was not completed.");
           }
 
+          // Step 2: Save order to database
           const res = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
             ...pendingOrder,
             transactionUuid: paymentResponse.data.transaction.transaction_uuid,
@@ -73,11 +75,7 @@ const Success = () => {
 
   useEffect(() => {
     if (loading || error) return;
-
-    const timer = setTimeout(() => {
-      navigate("/");
-    }, 3000);
-
+    const timer = setTimeout(() => navigate("/"), 3000);
     return () => clearTimeout(timer);
   }, [error, loading, navigate]);
 
@@ -109,16 +107,13 @@ const Success = () => {
   return (
     <div className="h-screen flex items-center justify-center bg-green-50">
       <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
-        <h1 className="text-2xl font-bold text-green-600">Payment Successful</h1>
-
+        <h1 className="text-2xl font-bold text-green-600">Payment Successful!</h1>
         <p className="text-gray-600 mt-2">Thank you! Your order has been placed.</p>
-
         {orderId && (
           <p className="mt-3 text-sm text-gray-500">
             Order ID: <span className="font-mono">{orderId}</span>
           </p>
         )}
-
         <p className="text-xs text-gray-400 mt-4">Redirecting to homepage...</p>
       </div>
     </div>

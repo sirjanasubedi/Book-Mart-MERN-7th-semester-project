@@ -23,9 +23,24 @@ const postABook = async (req, res) => {
 // =====================
 // GET ALL BOOKS
 // =====================
+// =====================
+// GET ALL BOOKS
+// =====================
 const getAllBooks = async (req, res) => {
   try {
-    const books = await Book.find().sort({ createdAt: -1 });
+    const { search } = req.query;
+
+    const filter = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { author: { $regex: search, $options: "i" } },
+            { category: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const books = await Book.find(filter).sort({ createdAt: -1 });
     res.status(200).send({ books });
   } catch (error) {
     res.status(500).send({ message: "Failed to fetch books" });

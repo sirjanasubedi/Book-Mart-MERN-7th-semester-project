@@ -26,6 +26,8 @@ function CheckoutPage() {
     useState(false);
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const totalPrice = cartItems
     .reduce(
@@ -382,13 +384,21 @@ function CheckoutPage() {
 
               <p className="text-sm text-gray-600">
                 I agree with{" "}
-                <Link className="text-blue-600 underline">
+                <button
+                  type="button"
+                  onClick={() => setShowTerms(true)}
+                  className="text-blue-600 underline hover:text-blue-800"
+                >
                   Terms & Conditions
-                </Link>{" "}
+                </button>{" "}
                 and{" "}
-                <Link className="text-blue-600 underline">
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacy(true)}
+                  className="text-blue-600 underline hover:text-blue-800"
+                >
                   Privacy Policy
-                </Link>
+                </button>
               </p>
             </div>
 
@@ -458,6 +468,80 @@ function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {showTerms && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold">Terms & Conditions</h2>
+                <p className="text-sm text-gray-500 mt-2">
+                  Read these terms before placing your order.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTerms(false)}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4 text-gray-700 text-sm">
+              <p>
+                1. You confirm that all order details, including address and phone number, are accurate.
+              </p>
+              <p>
+                2. Payment must be completed to confirm your order. If you choose eSewa, you will be redirected to the payment gateway.
+              </p>
+              <p>
+                3. Orders can be modified or canceled only according to our refund and cancellation policy.
+              </p>
+              <p>
+                4. By proceeding with checkout, you agree to our terms and allow Book Mart to process your payment.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPrivacy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold">Privacy Policy</h2>
+                <p className="text-sm text-gray-500 mt-2">
+                  Learn how we handle your personal and payment information.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPrivacy(false)}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4 text-gray-700 text-sm">
+              <p>
+                1. We collect only the information required to process your order and payment.
+              </p>
+              <p>
+                2. Your payment details are handled securely through our payment gateway and are not stored on this site.
+              </p>
+              <p>
+                3. We may use your email and phone number to confirm your order and provide delivery updates.
+              </p>
+              <p>
+                4. We will not share your personal data with third parties except to fulfill your order.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CSS */}
       <style>

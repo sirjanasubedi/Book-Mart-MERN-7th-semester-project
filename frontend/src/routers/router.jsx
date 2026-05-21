@@ -37,8 +37,9 @@ import AdminOrders from "../pages/dashboard/orders/AdminOrders";
 import PaymentReports from "../pages/dashboard/payments/PaymentReports";
 import AdminUsers from "../pages/dashboard/orders/AdminUsers";
 import Categories from "../pages/Categories";
-
+import SearchPage from "../pages/SearchPage";
 import { getAnonymousUserId } from "../utils/userTracking";
+import ManageCategories from "../pages/dashboard/manageCategories/ManageCategories"; // ✅ NEW
 
 if (!localStorage.getItem("uid")) {
   getAnonymousUserId();
@@ -50,26 +51,21 @@ const router = createBrowserRouter(
       {/* MAIN APP ROUTES */}
       <Route path="/" element={<App />}>
         <Route index element={<Home />} />
-
-        {/* ✅ THIS IS YOUR FIX */}
         <Route path="/shop" element={<Categories />} />
-
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/profile" element={<UserProfile />} />
-
         <Route path="/password" element={<PasswordInput />} />
         <Route path="/login" element={<LoginChoice />} />
         <Route path="/login/user" element={<UserLogin />} />
         <Route path="/register" element={<Register />} />
-
         <Route path="/payment" element={<PaymentForm />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
         <Route path="/payment-success" element={<Success />} />
         <Route path="/payment-failure" element={<Failure />} />
-
         <Route path="/books/:id" element={<SingleBook />} />
 
         <Route
@@ -116,6 +112,7 @@ const router = createBrowserRouter(
           <Route path="orders" element={<AdminOrders />} />
           <Route path="payment-reports" element={<PaymentReports />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="manage-categories" element={<ManageCategories />} /> {/* ✅ NEW */}
         </Route>
       </Route>
     </>

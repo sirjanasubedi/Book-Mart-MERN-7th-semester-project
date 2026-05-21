@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getImgUrl } from '../utils/getImgUrl';
 import { useFetchAllBooksQuery } from '../redux/features/books/booksApi';
+import axios from 'axios';
+import getBaseUrl from '../utils/baseURL';
 
 const Categories = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [categories, setCategories] = useState([]);
   const { data, isLoading, isError } = useFetchAllBooksQuery();
 
-  const categories = ["All", "Fiction", "Romance", "Fantasy", "Science Fiction"];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get(`${getBaseUrl()}/api/categories`);
+        setCategories(["All", ...res.data.map((cat) => cat.name)]);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+        setCategories(["All"]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
-  const filteredBooks = selectedCategory === "All"
-    ? (data?.books || [])
-    : (data?.books || []).filter(book => book.category === selectedCategory);
+  const filteredBooks =
+    selectedCategory === "All"
+      ? data?.books || []
+      : (data?.books || []).filter(
+          (book) => book.category?.toLowerCase() === selectedCategory.toLowerCase()
+        );
 
   if (isLoading) return <div className="text-center py-8">Loading...</div>;
   if (isError) return <div className="text-center py-8">Error loading books</div>;
@@ -20,7 +37,7 @@ const Categories = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8">Book Categories</h1>
 
-      {/* Category Filter */}
+      {/* ── Dynamic Category Buttons ── */}
       <div className="flex justify-center mb-8">
         <div className="flex flex-wrap gap-4">
           {categories.map((category) => (
@@ -39,7 +56,7 @@ const Categories = () => {
         </div>
       </div>
 
-      {/* Books Grid */}
+      {/* ── Books Grid ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredBooks.map((book) => (
           <div key={book._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
@@ -56,9 +73,9 @@ const Categories = () => {
               <p className="text-gray-500 text-sm mb-3 line-clamp-2">{book.description}</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-blue-600">${book.newPrice}</span>
+                  <span className="text-lg font-bold text-blue-600">Rs. {book.newPrice}</span>
                   {book.oldPrice > book.newPrice && (
-                    <span className="text-sm text-gray-500 line-through">${book.oldPrice}</span>
+                    <span className="text-sm text-gray-500 line-through">Rs. {book.oldPrice}</span>
                   )}
                 </div>
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">

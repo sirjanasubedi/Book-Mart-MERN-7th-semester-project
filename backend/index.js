@@ -7,47 +7,39 @@ const path = require("path");
 
 const app = express();
 
-// =====================
-// DB CONNECTION
-// =====================
 mongoose
   .connect(process.env.DB_URL)
   .then(() => console.log("MongoDB connected successfully!"))
   .catch((err) => console.log("MongoDB error:", err));
 
-// =====================
-// MIDDLEWARE
-// =====================
+const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = [clientUrl, "http://localhost:5174"];
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS policy: Origin not allowed"));
+    }
+  },
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ✅ THIS LINE serves uploaded images in the browser
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// request logger
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.originalUrl} - ${new Date().toISOString()}`);
   next();
 });
 
-// =====================
-// PAYMENT ROUTES
-// =====================
 const { EsewaInitiatePayment, paymentStatus } = require("./src/controller/esewa.controller.js");
 app.post("/initiate-payment", EsewaInitiatePayment);
 app.post("/payment-status", paymentStatus);
 
-// test
 app.get("/api/test", (req, res) => res.json({ message: "API working ✅" }));
 
-// =====================
-// FEATURE ROUTES
-// =====================
 const bookRoutes = require("./src/books/book.route.js");
 app.use("/api/books", bookRoutes);
 
@@ -60,21 +52,16 @@ app.use("/api/auth", userRoutes);
 const adminStatsRoutes = require("./src/stats/admin.stats.route.js");
 app.use("/api/admin", adminStatsRoutes);
 
-// =====================
-// 404 HANDLER
-// =====================
+// ✅ NEW — Category routes
+const categoryRoutes = require("./src/categories/category.route.js");
+app.use("/api/categories", categoryRoutes);
+
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
-// =====================
-// GLOBAL ERROR HANDLER
-// =====================
 app.use((err, req, res, next) => {
   console.error("SERVER ERROR:", err);
   res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
 });
 
-// =====================
-// START SERVER
-// =====================
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
