@@ -145,7 +145,6 @@ const AddBook = () => {
           </label>
         </div>
 
-        <InputField label="Old Price" name="oldPrice" type="number" placeholder="Old Price" register={register} />
         <InputField label="New Price" name="newPrice" type="number" placeholder="New Price" register={register} />
 
         <div className="mb-4">

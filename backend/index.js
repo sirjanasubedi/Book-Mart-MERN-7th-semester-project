@@ -56,6 +56,8 @@ app.use("/api/admin", adminStatsRoutes);
 const categoryRoutes = require("./src/categories/category.route.js");
 app.use("/api/categories", categoryRoutes);
 
+const { startUserProfileScheduler } = require("./src/scheduler/userProfileScheduler");
+
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
 app.use((err, req, res, next) => {
@@ -64,4 +66,7 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+  startUserProfileScheduler();
+});

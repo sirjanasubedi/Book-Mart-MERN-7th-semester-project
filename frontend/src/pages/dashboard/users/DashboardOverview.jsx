@@ -73,7 +73,7 @@ const DashboardOverview = () => {
 
         {/* EARNINGS (FIXED) */}
         <div className="bg-white p-5 rounded-xl shadow border-l-4 border-green-500">
-          <p className="text-gray-500 text-sm">Earnings</p>
+          <p className="text-gray-500 text-sm">Expenditure</p>
           <h2 className="text-2xl font-bold break-words">
             {formatMoney(totalSpent)}
           </h2>

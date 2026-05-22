@@ -1,4 +1,5 @@
 const Book = require("./book.model");
+const User = require("../users/user.model");
 
 // =====================
 // CREATE BOOK (ADMIN)
@@ -112,6 +113,33 @@ const likeBook = async (req, res) => {
     }
 
     await book.save();
+    // Update user's likedBooks and preferences
+    try {
+      const user = await User.findById(userId);
+      if (user) {
+        const likedSet = new Set((user.likedBooks || []).map(String));
+        if (alreadyLiked) {
+          // remove
+          user.likedBooks = (user.likedBooks || []).filter((id) => String(id) !== String(req.params.id));
+          // decrement category count
+          const cat = book.category || 'Unknown';
+          const current = user.preferences?.categories?.get(cat) || 0;
+          if (current > 0) user.preferences.categories.set(cat, current - 1);
+        } else {
+          if (!likedSet.has(String(req.params.id))) {
+            user.likedBooks = [...(user.likedBooks || []), req.params.id];
+          }
+          const cat = book.category || 'Unknown';
+          user.preferences = user.preferences || { categories: {} };
+          if (!user.preferences.categories) user.preferences.categories = new Map();
+          const current = user.preferences.categories.get(cat) || 0;
+          user.preferences.categories.set(cat, current + 1);
+        }
+        await user.save();
+      }
+    } catch (err) {
+      console.error('Failed to update user likedBooks/preferences', err);
+    }
     res.status(200).send({ book });
   } catch (error) {
     res.status(500).send({ message: "Failed to like book" });

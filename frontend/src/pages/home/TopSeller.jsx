@@ -1,110 +1,222 @@
-import React, { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import BookCard from "../books/BookCard";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, Navigation } from "swiper/modules";
 import { useFetchAllBooksQuery } from "../../redux/features/books/booksApi";
 
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
-
-const categories = [
-  "All",
-  "Business",
-  "Fiction",
-  "Horror",
-  "Adventure",
-  "Romance",
-  "Fantasy",
-  "Science Fiction",
-  "Novel",
-];
-
-const TopSellers = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All");
-
+const TopSellers = ({ hideHeader = false }) => {
   const { data, isLoading, isError } = useFetchAllBooksQuery();
 
   const books = Array.isArray(data?.books) ? data.books : [];
-
-  const filteredBooks =
-    selectedCategory === "All"
-      ? books
-      : books.filter(
-          (book) =>
-            book.category?.toLowerCase() ===
-            selectedCategory.toLowerCase()
-        );
+  const filteredBooks = books;
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-600">
-        Loading books...
+      <div className="top-sellers-wrapper">
+        <div className="ts-loading">
+          <div className="ts-loading-spinner" />
+          <p>Loading books…</p>
+        </div>
+        <style>{styles}</style>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-red-500">
-        Failed to load books
+      <div className="top-sellers-wrapper">
+        <div className="ts-error">
+          <p>Unable to load books. Please try again.</p>
+        </div>
+        <style>{styles}</style>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <section className="top-sellers-wrapper relative">
+      <style>{styles}</style>
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-
-        <h2 className="text-2xl font-bold text-gray-900">
-          Top Sellers
-        </h2>
-
-        {/* CATEGORY FILTER */}
-        <div className="mt-3 md:mt-0">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border border-gray-300 bg-white text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      {!hideHeader && (
+        <div className="flex justify-end -mt-2 mb-4 px-2 sm:px-0">
+          <Link
+            to="/categories"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-slate-100 text-slate-900 font-semibold hover:bg-slate-200 transition"
           >
-            {categories.map((cat, i) => (
-              <option key={i} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            Show All
+          </Link>
         </div>
-      </div>
+      )}
 
-      {/* EMPTY STATE */}
       {filteredBooks.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          No books found in this category
+        <div className="ts-empty">
+          <span className="ts-empty-icon">📚</span>
+          <p className="ts-empty-text">No books found</p>
         </div>
       ) : (
-        <Swiper
-          slidesPerView={1}
-          spaceBetween={25}
-          navigation
-          modules={[Pagination, Navigation]}
-          breakpoints={{
-            640: { slidesPerView: 1, spaceBetween: 20 },
-            768: { slidesPerView: 2, spaceBetween: 25 },
-            1024: { slidesPerView: 2, spaceBetween: 30 },
-            1180: { slidesPerView: 3, spaceBetween: 30 },
-          }}
-        >
-          {filteredBooks.map((book) => (
-            <SwiperSlide key={book._id}>
-              <BookCard book={book} />
-            </SwiperSlide>
+        <div className="ts-books-grid">
+          {filteredBooks.slice(0, 4).map((book) => (
+            <div key={book._id} className="ts-book-item">
+              <BookCard book={book} showActions={false} />
+            </div>
           ))}
-        </Swiper>
+        </div>
       )}
-    </div>
+    </section>
   );
 };
+
+/* ─── STYLES ────────────────────────────────────────────────────────────── */
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --ts-ink:      #111827;
+    --ts-sub:      #6b7280;
+    --ts-accent:   #2563eb;
+    --ts-accent-h: #1d4ed8;
+    --ts-border:   #e5e7eb;
+    --ts-pill-bg:  #f3f4f6;
+  }
+
+  /* ── wrapper ── */
+  .top-sellers-wrapper {
+    background: transparent;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── filter pills row ── */
+  .ts-filter-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 28px;
+  }
+
+  .ts-pill {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ts-sub);
+    background: var(--ts-pill-bg);
+    border: 1px solid var(--ts-border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+    white-space: nowrap;
+  }
+
+  .ts-pill:hover {
+    color: var(--ts-ink);
+    background: #e5e7eb;
+    border-color: #d1d5db;
+  }
+
+  .ts-pill--active {
+    color: #fff;
+    background: var(--ts-accent);
+    border-color: var(--ts-accent);
+    box-shadow: 0 2px 8px rgba(37,99,235,.22);
+  }
+
+  .ts-pill--active:hover {
+    background: var(--ts-accent-h);
+    border-color: var(--ts-accent-h);
+  }
+
+  /* ── responsive grid ── */
+  .ts-books-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  @media (min-width: 640px) {
+    .ts-books-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ts-books-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+  }
+
+  .ts-book-item { }
+
+  /* ── empty state ── */
+  .ts-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 60px 20px;
+    text-align: center;
+    grid-column: 1 / -1;
+  }
+
+  .ts-empty-icon { font-size: 36px; }
+
+  .ts-empty-text {
+    font-size: 14px;
+    color: var(--ts-sub);
+    margin: 0;
+  }
+
+  .ts-empty-text strong { color: var(--ts-ink); }
+
+  /* ── loading ── */
+  .ts-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 60px 20px;
+    color: var(--ts-sub);
+    font-size: 14px;
+  }
+
+  .ts-loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--ts-border);
+    border-top-color: var(--ts-accent);
+    border-radius: 50%;
+    animation: ts-spin .7s linear infinite;
+  }
+
+  @keyframes ts-spin { to { transform: rotate(360deg); } }
+
+  /* ── error ── */
+  .ts-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  
+
+  /* ── responsive ── */
+  @media (max-width: 900px) {
+    .ts-books-grid {
+      flex-wrap: nowrap;
+      gap: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .top-sellers-wrapper { padding: 28px 0 36px; }
+    .ts-books-grid {
+      flex-wrap: nowrap;
+      gap: 14px;
+    }
+    .ts-book-item { min-width: 220px; }
+  }
+`;
 
 export default TopSellers;

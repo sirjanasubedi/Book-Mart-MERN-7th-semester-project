@@ -19,6 +19,25 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  // Profile data used for simple content-based recommendations
+  purchasedBooks: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Book' }
+  ],
+  likedBooks: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Book' }
+  ],
+  // category -> count map (e.g. { "Fiction": 3 })
+  preferences: {
+    categories: {
+      type: Map,
+      of: Number,
+      default: {}
+    }
+  },
+  // Cached recommendations (optional) - array of Book refs
+  recommendations: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Book' }
+  ],
 });
 
 module.exports = mongoose.model("User", userSchema);

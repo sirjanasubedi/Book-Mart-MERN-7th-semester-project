@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import TopSellers from "./TopSeller";
 import Recommended from "./Recommended";
 import PersonalizedRecommendations from "./PersonalizedRecommendations";
+import UserRecommendations from "../../components/UserRecommendations";
 import BANNER from "./Banner";
 import { useFetchAllBooksQuery } from "../../redux/features/books/booksApi";
 import { getUserPreferences } from "../../utils/userTracking";
@@ -13,14 +15,24 @@ const SectionWrapper = ({ children }) => (
   </div>
 );
 
-const SectionTitle = ({ title, subtitle }) => (
-  <div className="mb-6">
-    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-      {title}
-    </h2>
-    {subtitle && (
-      <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
-    )}
+const SectionHeader = ({ title, subtitle, buttonLink, buttonText }) => (
+  <div className="w-full flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="text-gray-500 text-sm mt-1 max-w-2xl">
+          {subtitle}
+        </p>
+      )}
+    </div>
+    <Link
+      to={buttonLink}
+      className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100"
+    >
+      {buttonText}
+    </Link>
   </div>
 );
 
@@ -59,47 +71,42 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 py-10 space-y-10">
 
         {/* TOP SELLERS */}
-        <SectionWrapper>
-          <SectionTitle
-            title="🔥 Top Sellers"
+        <div className="space-y-6">
+          <SectionHeader
+            title="Top Sellers"
             subtitle="Most popular books right now"
+            buttonLink="/categories"
+            buttonText="Show All"
           />
-          <TopSellers />
-        </SectionWrapper>
+          <TopSellers hideHeader />
+        </div>
 
         {/* RECOMMENDED */}
-        <SectionWrapper>
-          <SectionTitle
-            title="⭐ Recommended"
+        <div className="space-y-6">
+          <SectionHeader
+            title="Recommended"
             subtitle="Trending books you might like"
+            buttonLink="/categories"
+            buttonText="Show All"
           />
-          <Recommended />
-        </SectionWrapper>
+          <Recommended hideHeader />
+        </div>
 
-        {/* 🔥 ONLY FOR LOGGED IN USERS */}
+        {/* ONLY FOR LOGGED IN USERS */}
         {currentUser && userPreferences?.likedBooks?.length > 0 && (
           <SectionWrapper>
             <SectionTitle
-              title="🎯 Because You Liked"
+              title="Because You Liked"
               subtitle="Personalized for your reading taste"
             />
             <PersonalizedRecommendations
               likedBooks={userPreferences.likedBooks}
               allBooks={data.books}
             />
+            <div className="mt-6">
+              <UserRecommendations />
+            </div>
           </SectionWrapper>
-        )}
-
-        {/* 🔒 GUEST EXPERIENCE MESSAGE */}
-        {!currentUser && (
-          <div className="text-center bg-indigo-50 border border-indigo-100 p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Login to get personalized book recommendations
-            </h3>
-            <p className="text-gray-500 mt-1">
-              Discover books based on your interests
-            </p>
-          </div>
         )}
 
       </div>

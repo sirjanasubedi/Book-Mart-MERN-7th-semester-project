@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require("./user.model");
+const Book = require("../books/book.model");
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'secretkey';
 const ADMIN_REGISTRATION_CODE = process.env.ADMIN_REGISTRATION_CODE || 'admin1234';
@@ -154,9 +155,42 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// GET recommendations for a user based on their category preferences
+const getRecommendations = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId).populate('purchasedBooks likedBooks');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Build ranked categories list
+    const catMap = user.preferences?.categories || new Map();
+    // Convert Map to array of [category, count]
+    const catArray = Array.from(catMap.entries ? catMap.entries() : Object.entries(catMap));
+    catArray.sort((a, b) => b[1] - a[1]);
+    const topCategories = catArray.slice(0, 3).map(([c]) => c);
+
+    // Exclude already purchased/liked books
+    const excluded = new Set([
+      ...(user.purchasedBooks || []).map(String),
+      ...(user.likedBooks || []).map(String),
+    ]);
+
+    let query = { _id: { $nin: Array.from(excluded) } };
+    if (topCategories.length > 0) query.category = { $in: topCategories };
+
+    const recommendations = await Book.find(query).limit(12);
+
+    res.json({ recommendations });
+  } catch (error) {
+    console.error('Failed to get recommendations', error);
+    res.status(500).json({ message: 'Failed to get recommendations' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   loginAdmin,
   getAllUsers,
+  getRecommendations,
 };
