@@ -43,7 +43,7 @@ const PersonalizedRecommendations = ({ likedBooks, allBooks }) => {
       <h2 className="text-3xl font-semibold mb-6">Recommended For You</h2>
       <Swiper
         slidesPerView={1}
-        spaceBetween={20}
+        spaceBetween={12}
         navigation
         modules={[Navigation]}
         breakpoints={{
@@ -54,7 +54,7 @@ const PersonalizedRecommendations = ({ likedBooks, allBooks }) => {
       >
         {recommendedBooks.map((book) => (
           <SwiperSlide key={book._id}>
-            <BookCard book={book} />
+            <BookCard book={book} showActions={false} />
           </SwiperSlide>
         ))}
       </Swiper>

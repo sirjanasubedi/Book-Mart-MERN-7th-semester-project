@@ -23,7 +23,6 @@ const UpdateBook = () => {
       setValue('description', book.description);
       setValue('category', book?.category);
       setValue('trending', book.trending);
-      setValue('oldPrice', book.oldPrice);
       setValue('newPrice', book.newPrice);
       setValue('coverImage', book.coverImage)
     }
@@ -35,7 +34,6 @@ const UpdateBook = () => {
       description: data.description,
       category: data.category,
       trending: data.trending,
-      oldPrice: Number(data.oldPrice),
       newPrice: Number(data.newPrice),
       coverImage: data.coverImage || book.coverImage,
     };
@@ -107,14 +105,6 @@ const UpdateBook = () => {
             <span className="ml-2 text-sm font-semibold text-gray-700">Trending</span>
           </label>
         </div>
-
-        <InputField
-          label="Old Price"
-          name="oldPrice"
-          type="number"
-          placeholder="Old Price"
-          register={register}
-        />
 
         <InputField
           label="New Price"

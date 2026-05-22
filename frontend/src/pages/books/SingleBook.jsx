@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getImgUrl } from "../../utils/getImgUrl";
+import BookCard from "./BookCard";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import { useFetchAllBooksQuery } from "../../redux/features/books/booksApi";
@@ -20,6 +21,12 @@ const SingleBook = () => {
   const [likesCount, setLikesCount] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
 
+  useEffect(() => {
+    if (book?.likes) {
+      setLikesCount(book.likes.length);
+    }
+  }, [book]);
+
   const isAdmin = currentUser?.role === "admin";
 
   const handleLike = () => {
@@ -32,11 +39,6 @@ const SingleBook = () => {
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
-
-  const discount =
-    book?.oldPrice > book?.newPrice
-      ? Math.round(((book.oldPrice - book.newPrice) / book.oldPrice) * 100)
-      : 0;
 
   if (isLoading) {
     return (
@@ -82,9 +84,13 @@ const SingleBook = () => {
     );
   }
 
+  const similarBooks = (data?.books || [])
+    .filter((b) => b.category === book.category && b._id !== book._id)
+    .slice(0, 4);
+
   return (
     <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4">
 
         {/* Back Button */}
         <button
@@ -99,70 +105,55 @@ const SingleBook = () => {
           <div className="grid md:grid-cols-2 gap-0">
 
             {/* LEFT - Book Cover */}
-            <div className="relative bg-indigo-50 flex items-center justify-center p-8">
-              {discount > 0 && (
-                <span className="absolute top-4 left-4 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {discount}% OFF
-                </span>
-              )}
-              <img
+            <div className="relative bg-white flex items-center justify-start p-4">
+                <img
                 src={getImgUrl(book.coverImage)}
                 alt={book.title}
-                className="w-full max-w-sm rounded-xl shadow-xl object-cover"
+                className="w-full max-w-sm rounded-none shadow-lg object-cover border border-black"
               />
             </div>
 
             {/* RIGHT - Book Details */}
-            <div className="p-8 flex flex-col justify-between">
+            <div className="p-6 flex flex-col justify-between">
               <div>
 
                 {/* Category */}
-                <div className="flex items-center gap-2 mb-3">
-                  <FiTag className="text-indigo-500 text-sm" />
-                  <span className="text-xs uppercase tracking-widest text-indigo-500 font-semibold">
+                <div className="flex items-center gap-2 mb-2">
+                  <FiTag className="text-black text-sm" />
+                  <span className="text-xs uppercase tracking-widest text-black font-semibold">
                     {book.category}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
+                <h1 className="text-3xl font-extrabold text-gray-900 mb-3 leading-tight">
                   {book.title}
                 </h1>
 
                 {/* Divider */}
-                <hr className="border-gray-100 mb-4" />
+                <hr className="border-gray-200 mb-3" />
 
                 {/* Description */}
                 <p className="text-gray-600 text-sm leading-relaxed mb-6">
                   {book.description}
                 </p>
 
-                {/* Price */}
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-3xl font-bold text-indigo-700">
-                    Rs. {book.newPrice?.toFixed(2)}
-                  </span>
-                  {book.oldPrice && (
-                    <span className="text-base text-gray-400 line-through">
-                      Rs. {book.oldPrice?.toFixed(2)}
-                    </span>
-                  )}
-                  {discount > 0 && (
-                    <span className="text-sm text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">
-                      Save {discount}%
-                    </span>
-                  )}
-                </div>
-
               </div>
 
               {/* BOTTOM ACTIONS */}
               <div>
 
+                {/* Price */}
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-2xl font-bold text-black">
+                    Rs. {book.newPrice?.toFixed(2)}
+                  </span>
+                </div>
+
                 {/* Like Button */}
                 <button
                   onClick={handleLike}
-                  className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border transition mb-4 ${
+                  className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition mb-3 ${
                     liked
                       ? "bg-red-50 border-red-300 text-red-500"
                       : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-red-50 hover:border-red-300 hover:text-red-500"
@@ -174,12 +165,12 @@ const SingleBook = () => {
 
                 {/* Admin Notice */}
                 {isAdmin && (
-                  <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm font-medium">
-                    <span className="text-lg">👑</span>
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-lg text-xs font-medium mb-3">
+                    <span className="text-base">👑</span>
                     <div>
                       <p className="font-semibold">Admin View</p>
                       <p className="text-xs text-amber-600 font-normal">
-                        Cart features are disabled in admin mode.
+                        Cart disabled in admin mode.
                       </p>
                     </div>
                   </div>
@@ -189,13 +180,13 @@ const SingleBook = () => {
                 {!isAdmin && currentUser && (
                   <button
                     onClick={handleAddToCart}
-                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white transition ${
+                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-semibold text-white transition mb-2 ${
                       addedToCart
                         ? "bg-green-500 hover:bg-green-600"
-                        : "bg-indigo-600 hover:bg-indigo-700"
+                        : "bg-blue-500 hover:bg-blue-600"
                     }`}
                   >
-                    <FiShoppingCart />
+                    <FiShoppingCart size={18} />
                     {addedToCart ? "Added to Cart ✓" : "Add to Cart"}
                   </button>
                 )}
@@ -204,9 +195,9 @@ const SingleBook = () => {
                 {!isAdmin && !currentUser && (
                   <button
                     onClick={() => navigate("/login")}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition"
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 transition"
                   >
-                    <FiShoppingCart />
+                    <FiShoppingCart size={18} />
                     Login to Buy
                   </button>
                 )}
@@ -214,8 +205,30 @@ const SingleBook = () => {
               </div>
             </div>
           </div>
+
         </div>
       </div>
+
+      {/* SIMILAR BOOKS */}
+      <div className="max-w-7xl mx-auto px-4 mt-10">
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-5">Similar Books</h2>
+          {similarBooks.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              {similarBooks.map((similarBook) => (
+                <BookCard
+                  key={similarBook._id}
+                  book={similarBook}
+                  showActions={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No similar books found in this category.</p>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };
