@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -17,7 +16,6 @@ const PaymentForm = () => {
 
   useEffect(() => {
     if (!esewaForm) return;
-
     document.getElementById('esewa-payment-form')?.submit();
   }, [esewaForm]);
 
@@ -25,19 +23,14 @@ const PaymentForm = () => {
     if (!orderData) {
       const savedOrder = localStorage.getItem('pendingOrder');
       if (savedOrder) {
-        try {
-          setOrderData(JSON.parse(savedOrder));
-          return;
-        } catch {
-          localStorage.removeItem('pendingOrder');
-        }
+        try { setOrderData(JSON.parse(savedOrder)); return; }
+        catch { localStorage.removeItem('pendingOrder'); }
       }
       navigate('/checkout');
     }
   }, [orderData, navigate]);
 
-  const handlePayment = async (e) => {
-    e.preventDefault();
+  const handleEsewaPayment = async () => {
     if (!orderData) return;
     setLoading(true);
     setPaymentError('');
@@ -52,126 +45,167 @@ const PaymentForm = () => {
         orderId: orderData._id || orderData.orderId,
       });
 
-      const paymentUrl = response.data?.paymentUrl || response.data?.url;
+      const paymentUrl = response.data?.paymentUrl;
       const formData = response.data?.formData;
-      if (!paymentUrl) {
-        console.error('Missing payment URL in response:', response.data);
-        setPaymentError('Unable to start eSewa payment. Please try again later.');
+
+      if (!paymentUrl || !formData?.transaction_uuid) {
+        setPaymentError('Unable to start eSewa payment. Please try again.');
         return;
       }
 
-      localStorage.setItem(
-        'pendingOrder',
-        JSON.stringify({
-          ...orderData,
-          transactionUuid,
-        })
-      );
-
-      if (response.data?.mock) {
-        window.location.href = paymentUrl;
-        return;
-      }
-
-      if (!formData || !formData.transaction_uuid) {
-        console.error('Missing eSewa form data in response:', response.data);
-        setPaymentError('Unable to start eSewa payment. Please try again later.');
-        return;
-      }
+      localStorage.setItem('pendingOrder', JSON.stringify({
+        ...orderData,
+        transactionUuid,
+        paymentMethod: 'esewa',
+      }));
 
       setEsewaForm({ paymentUrl, formData });
     } catch (error) {
-      console.error('Error initiating payment:', error);
-      setPaymentError(error.response?.data?.message || 'Error initiating payment. Please try again.');
+      setPaymentError(error.response?.data?.message || 'eSewa payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded">
-      <h1 className="text-2xl font-bold mb-4">Confirm Payment</h1>
-      <p><strong>Total Items:</strong> {orderData?.totalItems ?? '-'}</p>
-      <p><strong>Total Amount:</strong> Rs. {orderData?.totalPrice ?? '-'}</p>
-      <p className="text-sm text-gray-600 mt-3">
-        By continuing, you agree to our{' '}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5">
+            <h1 className="text-xl font-bold text-white">Complete Your Order</h1>
+            <p className="text-green-100 text-sm mt-1">Review and confirm payment</p>
+          </div>
+
+          {/* Order Summary */}
+          <div className="px-6 py-5 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Order Summary
+            </h2>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600">Total Items</span>
+              <span className="font-medium text-gray-800">{orderData?.totalItems ?? 0}</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <span className="font-semibold text-gray-700">Total Amount</span>
+              <span className="text-xl font-bold text-green-600">
+                Rs. {orderData?.totalPrice ?? '0.00'}
+              </span>
+            </div>
+          </div>
+
+          {/* Payment Section */}
+          <div className="px-6 py-5">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+              Payment Method
+            </h2>
+
+            {/* Error */}
+            {paymentError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <span className="text-red-500 mt-0.5">⚠</span>
+                <p className="text-red-600 text-sm">{paymentError}</p>
+              </div>
+            )}
+
+            {/* eSewa Button */}
+            <button
+              onClick={handleEsewaPayment}
+              disabled={!orderData || loading}
+              className={`w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-3 transition-all duration-200 ${
+                !orderData || loading
+                  ? 'bg-gray-200 cursor-not-allowed text-gray-400'
+                  : 'bg-green-500 hover:bg-green-600 active:scale-95 shadow-md hover:shadow-green-200'
+              }`}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                <>
+                  <img
+                    src="https://esewa.com.np/common/images/esewa_logo.png"
+                    alt="eSewa"
+                    className="h-5 w-auto"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                  Pay with eSewa
+                </>
+              )}
+            </button>
+
+            {/* Terms */}
+            <p className="text-xs text-gray-400 text-center mt-4">
+              By paying, you agree to our{' '}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-green-600 underline hover:text-green-700"
+              >
+                Terms & Conditions
+              </button>
+            </p>
+          </div>
+
+          {/* Security note */}
+          <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-center gap-2">
+            <span className="text-gray-400 text-xs">🔒</span>
+            <p className="text-xs text-gray-400">Secured & encrypted payment</p>
+          </div>
+        </div>
+
+        {/* Back button */}
         <button
-          type="button"
-          onClick={() => setShowTerms(true)}
-          className="text-blue-600 underline hover:text-blue-800"
+          onClick={() => navigate(-1)}
+          className="mt-4 w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors"
         >
-          Terms & Conditions
+          ← Go Back
         </button>
-        .
-      </p>
+      </div>
 
-      {paymentError && (
-        <div className="mb-4 text-red-600">{paymentError}</div>
-      )}
-
-      <form onSubmit={handlePayment}>
-        <button
-          type="submit"
-          disabled={!orderData || loading}
-          className={`mt-6 text-white px-4 py-2 rounded ${
-            !orderData || loading
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-green-500 hover:bg-green-600'
-          }`}
-        >
-          {loading ? 'Processing...' : 'Pay with eSewa'}
-        </button>
-      </form>
-
+      {/* Hidden eSewa form */}
       {esewaForm && (
-        <form
-          id="esewa-payment-form"
-          action={esewaForm.paymentUrl}
-          method="POST"
-          className="hidden"
-        >
+        <form id="esewa-payment-form" action={esewaForm.paymentUrl} method="POST" className="hidden">
           {Object.entries(esewaForm.formData).map(([name, value]) => (
             <input key={name} type="hidden" name={name} value={value} readOnly />
           ))}
         </form>
       )}
 
+      {/* Terms Modal */}
       {showTerms && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold">Terms & Conditions</h2>
-                <p className="text-sm text-gray-500 mt-2">
-                  Please read these terms before completing your payment.
-                </p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[85vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Terms & Conditions</h2>
               <button
-                type="button"
                 onClick={() => setShowTerms(false)}
-                className="text-gray-500 hover:text-gray-900"
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
               >
-                Close
+                ✕
               </button>
             </div>
-
-            <div className="mt-6 space-y-4 text-gray-700 text-sm">
-              <p>
-                1. You agree to pay the full order amount using the selected payment method.
-              </p>
-              <p>
-                2. Once payment is completed, the order will be processed and cannot be canceled without our cancellation policy.
-              </p>
-              <p>
-                3. Please confirm that your billing and shipping information is correct before submitting the payment.
-              </p>
-              <p>
-                4. Any disputes or refund requests must be submitted through our customer support channels.
-              </p>
-              <p>
-                5. By continuing, you acknowledge that you have read and accepted these terms.
-              </p>
+            <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+              <p>1. You agree to pay the full order amount using the selected payment method.</p>
+              <p>2. Once payment is completed, the order cannot be canceled without our cancellation policy.</p>
+              <p>3. Confirm your billing and shipping information before submitting payment.</p>
+              <p>4. Disputes or refund requests must go through our customer support channels.</p>
+              <p>5. By continuing, you accept these terms.</p>
             </div>
+            <button
+              onClick={() => setShowTerms(false)}
+              className="mt-5 w-full py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 font-medium"
+            >
+              I Understand
+            </button>
           </div>
         </div>
       )}

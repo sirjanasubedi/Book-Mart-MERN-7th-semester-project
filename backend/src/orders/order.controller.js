@@ -1,5 +1,5 @@
 const Order = require("./order.model");
-const Transaction = require("../model/Transaction.model");
+const Payment = require("../model/Payment");
 
 const normalizeOrderPayload = (payload) => ({
   ...payload,
@@ -29,58 +29,46 @@ const createAOrder = async (req, res) => {
 
 const completeEsewaOrder = async (req, res) => {
   try {
-    const orderId = req.body.orderId || req.body._id || req.body.transactionUuid;
+    const { transactionUuid, productId, orderId, _id, paymentMethod } = req.body;
 
-    if (req.body.mock) {
-      if (orderId) {
-        const updatedOrder = await Order.findByIdAndUpdate(
-          orderId,
-          { paymentStatus: "COMPLETE", paymentMethod: "eSewa" },
-          { new: true }
-        );
+    // Find the verified payment in Payment model (not Transaction model)
+    const txUuid = transactionUuid || productId;
+    const payment = await Payment.findOne({ transaction_uuid: txUuid });
 
-        if (updatedOrder) return res.status(200).json(updatedOrder);
-      }
-
-      const newOrder = new Order({
-        ...normalizeOrderPayload(req.body),
-        paymentStatus: "COMPLETE",
-        paymentMethod: "eSewa",
-      });
-      await newOrder.save();
-      return res.status(201).json(newOrder);
-    }
-
-    const transaction = await Transaction.findOne({
-      transaction_uuid: req.body.transactionUuid || req.body.productId,
-    });
-
-    if (!transaction || transaction.status !== "COMPLETE") {
+    if (!payment || payment.status !== "COMPLETE") {
+      console.error("Payment not verified for uuid:", txUuid);
       return res.status(400).json({ message: "Payment not verified" });
     }
 
-    if (orderId) {
+    const existingOrderId = orderId || _id;
+
+    // If order already exists, just update its payment status
+    if (existingOrderId) {
       const updatedOrder = await Order.findByIdAndUpdate(
-        orderId,
-        { paymentStatus: "COMPLETE", paymentMethod: "eSewa" },
+        existingOrderId,
+        {
+          paymentStatus: "COMPLETE",
+          paymentMethod: paymentMethod || "eSewa",
+        },
         { new: true }
       );
-
       if (updatedOrder) return res.status(200).json(updatedOrder);
     }
 
+    // Otherwise create a new order
     const newOrder = new Order({
       ...normalizeOrderPayload(req.body),
       paymentStatus: "COMPLETE",
-      paymentMethod: "eSewa",
+      paymentMethod: paymentMethod || "eSewa",
     });
     await newOrder.save();
-    res.status(201).json(newOrder);
+    return res.status(201).json(newOrder);
+
   } catch (error) {
+    console.error("completeEsewaOrder error:", error.message);
     res.status(400).json({ message: error.message });
   }
 };
-
 
 const getOrderByEmail = async (req, res) => {
   try {
@@ -92,37 +80,25 @@ const getOrderByEmail = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
- 
-// this is for user detelte orders
-
 
 const deleteOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
-
-    // Only allowing deletion of pending orders
-    if (order.paymentStatus !== 'PENDING') {
-      return res.status(400).json({ message: 'Only pending orders can be deleted' });
+    if (order.paymentStatus !== "PENDING") {
+      return res.status(400).json({ message: "Only pending orders can be deleted" });
     }
-
-
-await Order.findByIdAndDelete(req.params.id);
-    
-    res.status(200).json({ 
-      message: 'Order deleted successfully',
-      deletedOrderId: req.params.id // Return the deleted ID
+    await Order.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      message: "Order deleted successfully",
+      deletedOrderId: req.params.id,
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
-    });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 
 const getAllOrders = async (req, res) => {
   try {
@@ -148,20 +124,16 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-
 const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate({
-        path: "productIds",
-        model: "Book",
-        select: "title price coverImage"
-      });
-
+    const order = await Order.findById(req.params.id).populate({
+      path: "productIds",
+      model: "Book",
+      select: "title price coverImage",
+    });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-
     res.status(200).json(order);
   } catch (error) {
     console.error("Error fetching order:", error);
@@ -172,6 +144,9 @@ const getOrderById = async (req, res) => {
 module.exports = {
   createAOrder,
   completeEsewaOrder,
-  getOrderByEmail,deleteOrder,getAllOrders,
-  updateOrderStatus,getOrderById
+  getOrderByEmail,
+  deleteOrder,
+  getAllOrders,
+  updateOrderStatus,
+  getOrderById,
 };

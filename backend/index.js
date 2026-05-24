@@ -34,10 +34,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const { EsewaInitiatePayment, paymentStatus } = require("./src/controller/esewa.controller.js");
-app.post("/initiate-payment", EsewaInitiatePayment);
-app.post("/payment-status", paymentStatus);
-
 app.get("/api/test", (req, res) => res.json({ message: "API working ✅" }));
 
 const bookRoutes = require("./src/books/book.route.js");
@@ -52,9 +48,12 @@ app.use("/api/auth", userRoutes);
 const adminStatsRoutes = require("./src/stats/admin.stats.route.js");
 app.use("/api/admin", adminStatsRoutes);
 
-// ✅ NEW — Category routes
 const categoryRoutes = require("./src/categories/category.route.js");
 app.use("/api/categories", categoryRoutes);
+
+// Payment routes
+const paymentRoutes = require("./routes/payment");
+app.use("/", paymentRoutes);
 
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 

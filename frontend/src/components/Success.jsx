@@ -7,13 +7,16 @@ const Success = () => {
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState(null);
   const [error, setError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
-
   const queryParams = new URLSearchParams(location.search);
+
   const encodedData = queryParams.get("data");
-  const isMock = queryParams.get("mock") === "true";
+  const method = queryParams.get("method");
+  const pidx = queryParams.get("pidx");
+  const isSim = queryParams.get("sim") === "true";
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -21,68 +24,83 @@ const Success = () => {
         const savedOrder = localStorage.getItem("pendingOrder");
         const pendingOrder = savedOrder ? JSON.parse(savedOrder) : null;
 
-        if (!pendingOrder && !isMock) {
-          throw new Error("Pending order details were not found.");
-        }
+        if (!pendingOrder) throw new Error("Pending order details were not found.");
 
         let finalOrderId = null;
 
-        if (isMock) {
-          const res = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
-            ...(pendingOrder || {}),
-            paymentStatus: "COMPLETE",
-            paymentMethod: "eSewa",
-            mock: true,
-          });
-          finalOrderId = res.data._id;
+        // ── Khalti ────────────────────────────────────────────────────────
+        if (method === "khalti" && pidx) {
+          setPaymentMethod("Khalti");
 
+          const verifyRes = await axios.post(`${getBaseUrl()}/verify-khalti`, {
+            pidx,
+            transactionUuid: pendingOrder.transactionUuid,
+          });
+
+          if (verifyRes.data?.transaction?.status !== "COMPLETE") {
+            throw new Error("Khalti payment was not completed.");
+          }
+
+          const orderRes = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
+            ...pendingOrder,
+            transactionUuid: pendingOrder.transactionUuid,
+            paymentStatus: "COMPLETE",
+            paymentMethod: "Khalti",
+          });
+
+          finalOrderId = orderRes.data._id;
+
+        // ── eSewa ─────────────────────────────────────────────────────────
         } else if (encodedData) {
-          // Step 1: Verify payment with eSewa
-          const paymentResponse = await axios.post(`${getBaseUrl()}/payment-status`, {
+          setPaymentMethod("eSewa");
+
+          // Send just the raw base64 string, not wrapped in object
+          const paymentRes = await axios.post(`${getBaseUrl()}/payment-status`, {
             data: encodedData,
           });
 
-          if (paymentResponse.data?.transaction?.status !== "COMPLETE") {
-            throw new Error("Payment was not completed.");
+          if (paymentRes.data?.transaction?.status !== "COMPLETE") {
+            throw new Error("eSewa payment was not completed.");
           }
 
-          // Step 2: Save order to database
-          const res = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
+          const orderRes = await axios.post(`${getBaseUrl()}/api/orders/esewa`, {
             ...pendingOrder,
-            transactionUuid: paymentResponse.data.transaction.transaction_uuid,
-            productId: paymentResponse.data.transaction.transaction_uuid,
+            transactionUuid: paymentRes.data.transaction.transaction_uuid,
             paymentStatus: "COMPLETE",
             paymentMethod: "eSewa",
           });
 
-          finalOrderId = res.data._id;
+          finalOrderId = orderRes.data._id;
+
         } else {
-          throw new Error("eSewa did not return payment data.");
+          throw new Error("No payment data received.");
         }
 
         localStorage.removeItem("pendingOrder");
         setOrderId(finalOrderId);
       } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.message || err.message || "Unable to verify payment.");
+        console.error("Payment verify error:", err);
+        setError(
+          err.response?.data?.message || err.message || "Unable to verify payment."
+        );
       } finally {
         setLoading(false);
       }
     };
 
     verifyPayment();
-  }, [encodedData, isMock]);
+  }, [encodedData, method, pidx]);
 
   useEffect(() => {
     if (loading || error) return;
-    const timer = setTimeout(() => navigate("/"), 3000);
+    const timer = setTimeout(() => navigate("/"), 4000);
     return () => clearTimeout(timer);
   }, [error, loading, navigate]);
 
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-gray-600">Processing payment...</p>
+        <p className="text-gray-600 animate-pulse">Verifying payment...</p>
       </div>
     );
   }
@@ -107,14 +125,17 @@ const Success = () => {
   return (
     <div className="h-screen flex items-center justify-center bg-green-50">
       <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+        <div className="text-green-500 text-5xl mb-4">✓</div>
         <h1 className="text-2xl font-bold text-green-600">Payment Successful!</h1>
-        <p className="text-gray-600 mt-2">Thank you! Your order has been placed.</p>
+        <p className="text-gray-600 mt-2">
+          Thank you! Your order has been placed via {paymentMethod}.
+        </p>
         {orderId && (
           <p className="mt-3 text-sm text-gray-500">
             Order ID: <span className="font-mono">{orderId}</span>
           </p>
         )}
-        <p className="text-xs text-gray-400 mt-4">Redirecting to homepage...</p>
+        <p className="text-xs text-gray-400 mt-4">Redirecting to homepage in 4 seconds...</p>
       </div>
     </div>
   );
