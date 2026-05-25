@@ -5,9 +5,9 @@ const Book = require("./book.model");
 // =====================
 const postABook = async (req, res) => {
   try {
-    // ✅ If image uploaded, use its path. Otherwise fallback to text value
+    // ✅ FIXED: removed leading slash
     const coverImage = req.file
-      ? `/uploads/${req.file.filename}`
+      ? `uploads/${req.file.filename}`
       : req.body.coverImage;
 
     const newBook = new Book({ ...req.body, coverImage });
@@ -20,9 +20,6 @@ const postABook = async (req, res) => {
   }
 };
 
-// =====================
-// GET ALL BOOKS
-// =====================
 // =====================
 // GET ALL BOOKS
 // =====================
@@ -67,9 +64,9 @@ const updatedBook = async (req, res) => {
   try {
     const updateData = { ...req.body };
 
-    // ✅ Only update coverImage if a new file was uploaded
+    // ✅ FIXED: removed leading slash
     if (req.file) {
-      updateData.coverImage = `/uploads/${req.file.filename}`;
+      updateData.coverImage = `uploads/${req.file.filename}`;
     }
 
     const book = await Book.findByIdAndUpdate(req.params.id, updateData, { new: true });

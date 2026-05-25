@@ -5,135 +5,140 @@ import { Link } from "react-router-dom";
 
 const DashboardOverview = () => {
   const { currentUser } = useAuth();
-  const { data: orders = [], isLoading } =
-    useGetOrderByEmailQuery(currentUser?.email);
+  const { data: orders = [], isLoading } = useGetOrderByEmailQuery(currentUser?.email);
 
-  // loading UI
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
-        <p className="ml-3 text-gray-600">Loading dashboard...</p>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px", color: "#c8bfe0", fontSize: "15px" }}>
+        Loading dashboard...
       </div>
     );
   }
 
-  // -------------------------
-  // DATA CALCULATIONS
-  // -------------------------
   const totalOrders = orders.length;
+  const totalSpent = orders.filter(o => o.paymentStatus === "COMPLETE").reduce((sum, o) => sum + o.totalPrice, 0);
+  const pendingOrders = orders.filter(o => o.paymentStatus === "PENDING").length;
+  const completedOrders = orders.filter(o => o.paymentStatus === "COMPLETE").length;
+  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
 
-  const totalSpent = orders
-    .filter((order) => order.paymentStatus === "COMPLETE")
-    .reduce((sum, order) => sum + order.totalPrice, 0);
+  const formatMoney = (amount) =>
+    new Intl.NumberFormat("en-NP", { style: "currency", currency: "NPR" }).format(amount || 0);
 
-  const pendingOrders = orders.filter(
-    (order) => order.paymentStatus === "PENDING"
-  ).length;
-
-  const completedOrders = orders.filter(
-    (order) => order.paymentStatus === "COMPLETE"
-  ).length;
-
-  const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 3);
-
-  // -------------------------
-  // FORMAT CURRENCY (IMPORTANT FIX)
-  // -------------------------
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat("en-NP", {
-      style: "currency",
-      currency: "NPR",
-    }).format(amount || 0);
-  };
+  const statCards = [
+    {
+      label: "Total Orders",
+      value: totalOrders,
+      icon: "ti-shopping-bag",
+      color: "#60a5fa",
+      bg: "#1e3a5f",
+      border: "#2563eb44",
+    },
+    {
+      label: "Total Spent",
+      value: formatMoney(totalSpent),
+      icon: "ti-currency-rupee",
+      color: "#34d399",
+      bg: "#0d948822",
+      border: "#0d948844",
+      small: true,
+    },
+    {
+      label: "Pending Orders",
+      value: pendingOrders,
+      icon: "ti-clock",
+      color: "#fcd34d",
+      bg: "#d9770622",
+      border: "#d9770644",
+    },
+    {
+      label: "Completed Orders",
+      value: completedOrders,
+      icon: "ti-circle-check",
+      color: "#c4b5fd",
+      bg: "#7c3aed22",
+      border: "#7c3aed44",
+    },
+  ];
 
   return (
-    <div className="space-y-8">
+    <div style={{ fontFamily: "system-ui, sans-serif" }}>
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {currentUser?.fullName || currentUser?.email}
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#ffffff", margin: 0 }}>
+          Welcome back, {currentUser?.fullName || currentUser?.email} 👋
         </h1>
-        <p className="text-gray-600 mt-1">
-          Here is your store performance overview
+        <p style={{ fontSize: "13px", color: "#a89fc0", marginTop: "4px" }}>
+          Here is your account overview
         </p>
       </div>
 
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        {/* TOTAL ORDERS */}
-        <div className="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500">
-          <p className="text-gray-500 text-sm">Total Orders</p>
-          <h2 className="text-2xl font-bold">{totalOrders}</h2>
-        </div>
-
-        {/* EARNINGS (FIXED) */}
-        <div className="bg-white p-5 rounded-xl shadow border-l-4 border-green-500">
-          <p className="text-gray-500 text-sm">Earnings</p>
-          <h2 className="text-2xl font-bold break-words">
-            {formatMoney(totalSpent)}
-          </h2>
-        </div>
-
-        {/* PENDING */}
-        <div className="bg-white p-5 rounded-xl shadow border-l-4 border-yellow-500">
-          <p className="text-gray-500 text-sm">Pending Orders</p>
-          <h2 className="text-2xl font-bold">{pendingOrders}</h2>
-        </div>
-
-        {/* COMPLETED */}
-        <div className="bg-white p-5 rounded-xl shadow border-l-4 border-purple-500">
-          <p className="text-gray-500 text-sm">Completed Orders</p>
-          <h2 className="text-2xl font-bold">{completedOrders}</h2>
-        </div>
+      {/* STAT CARDS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "28px" }}>
+        {statCards.map((card) => (
+          <div key={card.label} style={{
+            background: "#211f2e",
+            border: `1px solid ${card.border}`,
+            borderRadius: "12px",
+            padding: "20px",
+            borderTop: `3px solid ${card.color}`,
+          }}>
+            <div style={{
+              width: "38px", height: "38px", borderRadius: "10px",
+              background: card.bg, display: "flex", alignItems: "center",
+              justifyContent: "center", marginBottom: "14px",
+            }}>
+              <i className={`ti ${card.icon}`} style={{ fontSize: "20px", color: card.color }}></i>
+            </div>
+            <p style={{ fontSize: "11px", color: "#a89fc0", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: "600", margin: "0 0 8px" }}>
+              {card.label}
+            </p>
+            <p style={{ fontSize: card.small ? "16px" : "26px", fontWeight: "700", color: "#ffffff", margin: 0 }}>
+              {card.value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* MAIN SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* BOTTOM GRID */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
         {/* RECENT ORDERS */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="flex justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent Orders</h2>
-            <Link
-              to="/user-dashboard/orders"
-              className="text-blue-600 text-sm"
-            >
+        <div style={{ background: "#211f2e", border: "1px solid #35314a", borderRadius: "12px", padding: "22px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+            <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#ffffff", margin: 0 }}>
+              Recent Orders
+            </h2>
+            <Link to="/user-dashboard/orders" style={{ fontSize: "12px", color: "#c4b5fd", textDecoration: "none", fontWeight: "500" }}>
               View All →
             </Link>
           </div>
 
           {recentOrders.length > 0 ? (
-            <div className="space-y-4">
+            <div>
               {recentOrders.map((order) => (
-                <div
-                  key={order._id}
-                  className="flex justify-between border p-4 rounded-lg"
-                >
+                <div key={order._id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "12px 0", borderBottom: "1px solid #2a2840",
+                }}>
                   <div>
-                    <p className="font-medium">
+                    <p style={{ fontSize: "13px", fontWeight: "600", color: "#ffffff", margin: 0 }}>
                       Order #{order._id.slice(-6)}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p style={{ fontSize: "11px", color: "#7a7090", margin: "3px 0 0" }}>
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-
-                  <div className="text-right">
-                    <p className="font-semibold">
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: "13px", fontWeight: "600", color: "#34d399", margin: 0 }}>
                       {formatMoney(order.totalPrice)}
                     </p>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        order.paymentStatus === "COMPLETE"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
+                    <span style={{
+                      fontSize: "10px", padding: "2px 8px", borderRadius: "20px", fontWeight: "600",
+                      background: order.paymentStatus === "COMPLETE" ? "#0d948822" : "#d9770622",
+                      color: order.paymentStatus === "COMPLETE" ? "#34d399" : "#fcd34d",
+                      border: `1px solid ${order.paymentStatus === "COMPLETE" ? "#0d948844" : "#d9770644"}`,
+                    }}>
                       {order.paymentStatus}
                     </span>
                   </div>
@@ -141,35 +146,68 @@ const DashboardOverview = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No orders yet</p>
+            <div style={{ textAlign: "center", padding: "30px 0" }}>
+              <p style={{ color: "#7a7090", fontSize: "13px" }}>No orders yet</p>
+              <Link to="/" style={{ display: "inline-block", marginTop: "12px", background: "#7c3aed", color: "#fff", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: "600" }}>
+                Start Shopping
+              </Link>
+            </div>
           )}
         </div>
 
         {/* QUICK ACTIONS */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div style={{ background: "#211f2e", border: "1px solid #35314a", borderRadius: "12px", padding: "22px" }}>
+          <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#ffffff", margin: "0 0 18px" }}>
+            Quick Actions
+          </h2>
 
-          <div className="space-y-3">
-            <Link
-              to="/"
-              className="block bg-blue-600 text-white text-center py-3 rounded-lg"
-            >
-              Continue Shopping
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <Link to="/" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              background: "#7c3aed", color: "#ffffff",
+              padding: "12px", borderRadius: "10px",
+              textDecoration: "none", fontSize: "14px", fontWeight: "600",
+            }}>
+              🛍️ Continue Shopping
             </Link>
 
-            <Link
-              to="/user-dashboard/orders"
-              className="block bg-gray-100 text-center py-3 rounded-lg"
-            >
-              Order History
+            <Link to="/user-dashboard/orders" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              background: "#2a2840", color: "#ffffff",
+              border: "1px solid #35314a",
+              padding: "12px", borderRadius: "10px",
+              textDecoration: "none", fontSize: "14px", fontWeight: "500",
+            }}>
+              📦 Order History
             </Link>
 
-            <Link
-              to="/profile"
-              className="block bg-gray-100 text-center py-3 rounded-lg"
-            >
-              Update Profile
+            <Link to="/user-dashboard/payment-history" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              background: "#2a2840", color: "#ffffff",
+              border: "1px solid #35314a",
+              padding: "12px", borderRadius: "10px",
+              textDecoration: "none", fontSize: "14px", fontWeight: "500",
+            }}>
+              💳 Payment History
             </Link>
+          </div>
+
+          {/* SUMMARY */}
+          <div style={{ marginTop: "20px", padding: "14px", background: "#1a1825", borderRadius: "10px", border: "1px solid #2a2840" }}>
+            <p style={{ fontSize: "11px", color: "#7a7090", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: "600", margin: "0 0 10px" }}>
+              Account Summary
+            </p>
+            {[
+              { label: "Total Orders", value: totalOrders },
+              { label: "Completed", value: completedOrders },
+              { label: "Pending", value: pendingOrders },
+              { label: "Total Spent", value: formatMoney(totalSpent) },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #2a2840" }}>
+                <span style={{ fontSize: "12px", color: "#a89fc0" }}>{item.label}</span>
+                <span style={{ fontSize: "12px", fontWeight: "600", color: "#ffffff" }}>{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
